@@ -1,0 +1,28 @@
+[build-system]
+requires = ["setuptools>=68", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "agentic-rag"
+version = "0.1.0"
+description = "Production-shaped RAG assistant for internal knowledge search"
+readme = "README.md"
+requires-python = ">=3.10"
+dependencies = [
+  "fastapi>=0.115",
+  "uvicorn[standard]>=0.30",
+  "pydantic>=2.7",
+  "scikit-learn>=1.5",
+  "numpy>=1.26",
+  "pypdf>=4.3",
+]
+
+[project.scripts]
+agentic-rag = "agentic_rag.cli:main"
+
+[tool.setuptools]
+packages = ["agentic_rag"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+
