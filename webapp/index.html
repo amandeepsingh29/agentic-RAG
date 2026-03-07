@@ -1,0 +1,179 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Docs Assistant</title>
+  <style>
+    :root { color-scheme: dark; --bg:#111315; --panel:#1b1e21; --panel-2:#25292d; --text:#f2f4f5; --muted:#a9b0b7; --line:#353a40; --accent:#d7f36b; --danger:#ff9d9d; }
+    * { box-sizing:border-box; }
+    body { margin:0; background:var(--bg); color:var(--text); font:15px/1.6 -apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif; }
+    .app { min-height:100vh; display:flex; flex-direction:column; }
+    header { height:64px; border-bottom:1px solid var(--line); display:flex; align-items:center; justify-content:space-between; padding:0 28px; }
+    .brand { display:flex; align-items:center; gap:10px; font-weight:650; letter-spacing:.01em; }
+    .mark { width:26px; height:26px; display:grid; place-items:center; border-radius:8px; background:var(--accent); color:#111315; font-weight:800; }
+    nav a { color:var(--muted); text-decoration:none; margin-left:20px; font-size:13px; }
+    nav a:hover { color:var(--text); }
+    main { width:min(820px,100%); margin:0 auto; padding:50px 20px 30px; flex:1; }
+    .welcome { text-align:center; margin:24px 0 42px; }
+    h1 { font-size:clamp(2rem,5vw,3.15rem); letter-spacing:-.045em; margin:0 0 10px; }
+    .welcome p { color:var(--muted); margin:0 auto; max-width:560px; }
+    .suggestions { display:flex; flex-wrap:wrap; justify-content:center; gap:9px; margin-top:24px; }
+    .suggestion { border:1px solid var(--line); background:transparent; color:var(--muted); border-radius:18px; padding:8px 13px; cursor:pointer; }
+    .suggestion:hover { color:var(--text); border-color:#667078; }
+    .chat { display:grid; gap:22px; }
+    .message { display:flex; gap:12px; align-items:flex-start; }
+    .message.user { justify-content:flex-end; }
+    .avatar { flex:0 0 28px; width:28px; height:28px; display:grid; place-items:center; border-radius:9px; background:var(--panel-2); color:var(--accent); font-size:12px; font-weight:700; }
+    .bubble { max-width:680px; white-space:pre-wrap; }
+    .user .bubble { background:var(--panel-2); border-radius:18px 18px 5px 18px; padding:11px 15px; }
+    .assistant .bubble { padding:3px 0; }
+    .answer { font-size:16px; }
+    .thinking { display:inline-flex; align-items:center; gap:8px; color:var(--muted); background:var(--panel); border:1px solid var(--line); border-radius:999px; padding:7px 12px; font-size:13px; }
+    .dots { display:inline-flex; gap:3px; }
+    .dots i { width:4px; height:4px; border-radius:50%; background:var(--accent); animation:pulse 1s infinite ease-in-out; }
+    .dots i:nth-child(2) { animation-delay:.15s; } .dots i:nth-child(3) { animation-delay:.3s; }
+    @keyframes pulse { 0%,60%,100% { opacity:.3; transform:translateY(0); } 30% { opacity:1; transform:translateY(-2px); } }
+    .details { margin-top:16px; border-top:1px solid var(--line); padding-top:12px; color:var(--muted); font-size:12px; }
+    .source { padding:7px 0; border-bottom:1px solid var(--line); }
+    .source:last-child { border-bottom:0; }
+    .source strong { color:var(--text); font-weight:550; }
+    .composer { position:sticky; bottom:18px; margin-top:38px; }
+    form { display:flex; align-items:flex-end; gap:10px; padding:9px; background:var(--panel); border:1px solid #4a5158; border-radius:18px; box-shadow:0 10px 30px #0005; }
+    textarea { flex:1; min-height:44px; max-height:160px; resize:none; border:0; outline:0; background:transparent; color:var(--text); padding:9px 10px; font:inherit; }
+    textarea::placeholder { color:#78818a; }
+    button.send { width:42px; height:42px; border:0; border-radius:12px; background:var(--accent); color:#111315; cursor:pointer; font-size:18px; font-weight:800; }
+    button.send:disabled { opacity:.45; cursor:wait; }
+    .suggestion:disabled { opacity:.45; cursor:wait; }
+    .hint { text-align:center; color:#727b84; font-size:11px; margin-top:9px; }
+    .error { color:var(--danger); }
+    @media (max-width:600px) { header { padding:0 16px; } nav a { margin-left:10px; } main { padding-top:30px; } }
+  </style>
+</head>
+<body>
+  <div class="app">
+    <header>
+      <div class="brand"><span class="mark">D</span> Documentation Assistant</div>
+      <nav><a href="/showcase">About this project</a></nav>
+    </header>
+    <main>
+      <section class="welcome" id="welcome">
+        <h1>Ask the documentation.</h1>
+        <p>Get answers from the indexed Kubernetes documentation, with the source passages shown alongside each response.</p>
+        <div class="suggestions">
+          <button class="suggestion" data-question="What is a Secret used for in Kubernetes?">Kubernetes Secrets</button>
+          <button class="suggestion" data-question="How are Services used to expose applications?">Services</button>
+          <button class="suggestion" data-question="What happens when a Pod is restarted?">Pod lifecycle</button>
+        </div>
+      </section>
+      <section class="chat" id="chat" aria-live="polite"></section>
+      <section class="composer">
+        <form id="ask-form">
+          <textarea id="question" rows="1" maxlength="1000" placeholder="Ask a question about Kubernetes docs..." required></textarea>
+          <button class="send" id="send" type="submit" aria-label="Send question">↑</button>
+        </form>
+        <div class="hint">Answers are generated only from the indexed documents. The assistant may say “I don't know.”</div>
+      </section>
+    </main>
+  </div>
+  <script>
+    const chat = document.getElementById("chat");
+    const form = document.getElementById("ask-form");
+    const input = document.getElementById("question");
+    const send = document.getElementById("send");
+    const welcome = document.getElementById("welcome");
+    const suggestionButtons = [...document.querySelectorAll("[data-question]")];
+    let requestInFlight = false;
+
+    function addMessage(kind, text, details = "") {
+      const row = document.createElement("article");
+      row.className = `message ${kind}`;
+      const avatar = document.createElement("div");
+      avatar.className = "avatar";
+      avatar.textContent = kind === "user" ? "You" : "D";
+      const bubble = document.createElement("div");
+      bubble.className = "bubble";
+      bubble.textContent = text;
+      if (details) {
+        const detail = document.createElement("div");
+        detail.className = "details";
+        detail.innerHTML = details;
+        bubble.appendChild(detail);
+      }
+      row.append(kind === "user" ? bubble : avatar, kind === "user" ? avatar : bubble);
+      chat.appendChild(row);
+      row.scrollIntoView({ behavior: "smooth", block: "nearest" });
+      return row;
+    }
+
+    function addThinking() {
+      const row = document.createElement("article");
+      row.className = "message assistant";
+      row.innerHTML = '<div class="avatar">D</div><div class="bubble"><span class="thinking" role="status"><span>Thinking</span><span class="dots" aria-hidden="true"><i></i><i></i><i></i></span></span></div>';
+      chat.appendChild(row);
+      row.scrollIntoView({ behavior: "smooth", block: "nearest" });
+      return row;
+    }
+
+    function completeAssistantMessage(row, text, details = "", isError = false) {
+      const bubble = row.querySelector(".bubble");
+      bubble.textContent = text;
+      if (isError) bubble.classList.add("error");
+      if (details) {
+        const detail = document.createElement("div");
+        detail.className = "details";
+        detail.innerHTML = details;
+        bubble.appendChild(detail);
+      }
+      row.scrollIntoView({ behavior: "smooth", block: "nearest" });
+    }
+
+    function sourceDetails(data) {
+      const sources = data.sources || [];
+      const label = data.abstained ? (data.refusal_reason || "No supporting evidence was found.") : `${sources.length} source passage${sources.length === 1 ? "" : "s"}`;
+      const items = sources.map((source) => `<div class="source"><strong>${escapeHtml(source.title || "Source")}</strong><br>${escapeHtml(source.source)} · score ${source.score}</div>`).join("");
+      return `<div>${escapeHtml(label)}</div>${items}`;
+    }
+
+    function escapeHtml(value) {
+      return String(value).replace(/[&<>"']/g, (char) => ({"&":"&amp;","<":"&lt;",">":"&gt;","\"":"&quot;","'":"&#039;"}[char]));
+    }
+
+    async function ask(question) {
+      const trimmed = question.trim();
+      if (!trimmed || requestInFlight) return;
+      requestInFlight = true;
+      welcome.hidden = true;
+      addMessage("user", trimmed);
+      const thinking = addThinking();
+      input.value = "";
+      send.disabled = true;
+      suggestionButtons.forEach((button) => { button.disabled = true; });
+      const controller = new AbortController();
+      const timeout = window.setTimeout(() => controller.abort(), 120000);
+      try {
+        const response = await fetch("/ask", { method:"POST", headers:{"Content-Type":"application/json"}, body:JSON.stringify({question:trimmed}), signal:controller.signal });
+        const raw = await response.text();
+        let data;
+        try { data = JSON.parse(raw); } catch { data = { detail: raw }; }
+        if (!response.ok) throw new Error(data.detail || "The request could not be completed.");
+        completeAssistantMessage(thinking, data.answer || "I don't know.", sourceDetails(data));
+      } catch (error) {
+        const message = error.name === "AbortError" ? "The request took too long. Please try again." : error.message;
+        completeAssistantMessage(thinking, message, "", true);
+      } finally {
+        window.clearTimeout(timeout);
+        requestInFlight = false;
+        send.disabled = false;
+        suggestionButtons.forEach((button) => { button.disabled = false; });
+        input.focus();
+      }
+    }
+
+    form.addEventListener("submit", (event) => { event.preventDefault(); ask(input.value); });
+    input.addEventListener("keydown", (event) => { if (event.key === "Enter" && !event.shiftKey) { event.preventDefault(); form.requestSubmit(); } });
+    input.addEventListener("input", () => { input.style.height = "auto"; input.style.height = `${Math.min(input.scrollHeight, 160)}px`; });
+    suggestionButtons.forEach((button) => button.addEventListener("click", () => ask(button.dataset.question)));
+  </script>
+</body>
+</html>

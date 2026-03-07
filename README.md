@@ -1,32 +1,50 @@
-# Agentic RAG
+# RAG Documentation Assistant
 
-An internal-knowledge RAG project built to answer questions from a small corpus of company files with citations, refusal behavior, and evaluation hooks.
+This project implements a classic RAG pipeline:
 
-## What it does
+Documents -> Chunking -> Embeddings -> Vector Store -> Retrieval -> LLM Generation
 
-- Ingests text, markdown, and PDF documents
-- Chunks documents with overlap and metadata
-- Retrieves evidence with a hybrid ranking strategy
-- Produces grounded answers with citations
-- Refuses to answer when evidence is weak
-- Exposes a small FastAPI service and a CLI
+The knowledge base is built from real Kubernetes documentation downloaded from the official Kubernetes website repository.
 
-## Why this project exists
+## Features
 
-This repository is meant to demonstrate how to build a production-shaped RAG system that is safe enough for internal company knowledge search.
+- Downloads public documentation and stores it locally
+- Chunks documents into retrieval-sized passages
+- Creates embeddings with a sentence-transformer model
+- Stores vectors in a persistent local Qdrant collection
+- Supports metadata-filtered retrieval
+- Retrieves the most relevant chunks for a question
+- Generates grounded answers through OpenRouter using `tencent/hy3:free`
+- Refuses to answer when retrieval confidence is too low
 
-## Project layout
-
-- `agentic_rag/` core package
-- `samples/` example documents and questions
-- `tests/` retrieval and policy tests
-
-## Local setup
+## Commands
 
 ```bash
-python -m venv .venv
+python3 -m venv .venv
 source .venv/bin/activate
 pip install -e .
-uvicorn agentic_rag.api:app --reload
+export OPENROUTER_API_KEY="your-key-here"
+export OPENROUTER_HTTP_REFERER="http://localhost"
+export OPENROUTER_TITLE="RAG Documentation Assistant"
+rag-docs download-docs --output data/kubernetes
+rag-docs ingest --documents data/kubernetes --index data/qdrant
+rag-docs ask "How do ConfigMaps help with configuration?"
 ```
 
+## API
+
+```bash
+uvicorn agentic_rag.api:app --host 127.0.0.1 --port 8080 --reload
+```
+
+## Web app
+
+Open `http://127.0.0.1:8080/` for the user-facing documentation chat and `http://127.0.0.1:8080/showcase` for the project knowledge base.
+
+Qdrant runs in local persistent mode. Its files are stored under `data/qdrant`; Docker is not required.
+
+The backend provides operational endpoints for:
+
+- refreshing the real Kubernetes documentation corpus (`POST /refresh-docs`)
+- building the retrieval index (`POST /ingest`)
+- answering questions with citations (`POST /ask`)
