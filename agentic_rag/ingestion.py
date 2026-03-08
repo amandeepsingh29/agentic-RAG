@@ -30,6 +30,38 @@ KUBERNETES_DOCS = [
         "pod-lifecycle",
         "https://raw.githubusercontent.com/kubernetes/website/main/content/en/docs/concepts/workloads/pods/pod-lifecycle.md",
     ),
+    (
+        "deployment",
+        "https://raw.githubusercontent.com/kubernetes/website/main/content/en/docs/concepts/workloads/controllers/deployment.md",
+    ),
+    (
+        "statefulset",
+        "https://raw.githubusercontent.com/kubernetes/website/main/content/en/docs/concepts/workloads/controllers/statefulset.md",
+    ),
+    (
+        "daemonset",
+        "https://raw.githubusercontent.com/kubernetes/website/main/content/en/docs/concepts/workloads/controllers/daemonset.md",
+    ),
+    (
+        "job",
+        "https://raw.githubusercontent.com/kubernetes/website/main/content/en/docs/concepts/workloads/controllers/job.md",
+    ),
+    (
+        "ingress",
+        "https://raw.githubusercontent.com/kubernetes/website/main/content/en/docs/concepts/services-networking/ingress.md",
+    ),
+    (
+        "namespace",
+        "https://raw.githubusercontent.com/kubernetes/website/main/content/en/docs/concepts/overview/working-with-objects/namespaces.md",
+    ),
+    (
+        "persistent-volumes",
+        "https://raw.githubusercontent.com/kubernetes/website/main/content/en/docs/concepts/storage/persistent-volumes.md",
+    ),
+    (
+        "probes",
+        "https://raw.githubusercontent.com/kubernetes/website/main/content/en/docs/tasks/configure-pod-container/configure-liveness-readiness-startup-probes.md",
+    ),
 ]
 
 DEFAULT_DOCUMENTS_DIR = Path("data/kubernetes")
