@@ -65,6 +65,9 @@ class RAGPipeline:
                 refusal_reason="Retrieved evidence did not sufficiently overlap with the question.",
             )
 
+        return self._answer_from_hits(question, hits)
+
+    def _answer_from_hits(self, question: str, hits: list) -> AnswerResult:
         context_parts: list[str] = []
         sources: list[dict] = []
         for hit in hits:

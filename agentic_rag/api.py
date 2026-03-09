@@ -7,10 +7,11 @@ from fastapi.responses import FileResponse, HTMLResponse
 from pydantic import BaseModel, Field
 
 from .ingestion import refresh_default_documents
+from .agentic_pipeline import AgenticRAGPipeline
 from .pipeline import RAGPipeline
 
 app = FastAPI(title="RAG Documentation Assistant", version="1.0.0")
-_pipeline: RAGPipeline | None = None
+_pipeline: AgenticRAGPipeline | None = None
 PROJECT_ROOT = Path(__file__).resolve().parent.parent
 DATA_ROOT = (PROJECT_ROOT / "data").resolve()
 WEBAPP_PATH = PROJECT_ROOT / "webapp/index.html"
@@ -90,14 +91,14 @@ def warm_pipeline() -> None:
 @app.on_event("shutdown")
 def close_pipeline() -> None:
     if _pipeline is not None:
-        _pipeline.store.client.close()
+        _pipeline.store.close()
 
 
 def get_pipeline() -> RAGPipeline:
     global _pipeline
     if _pipeline is None:
         try:
-            _pipeline = RAGPipeline(persist_dir=DATA_ROOT / "qdrant")
+            _pipeline = AgenticRAGPipeline(persist_dir=DATA_ROOT / "pgvector")
         except RuntimeError as exc:
             raise HTTPException(status_code=500, detail=str(exc)) from exc
     return _pipeline

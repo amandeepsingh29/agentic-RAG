@@ -39,6 +39,7 @@ class AnswerResult:
     confidence: float
     abstained: bool
     refusal_reason: str | None = None
+    trace: list[dict[str, Any]] = field(default_factory=list)
 
 
 @dataclass(frozen=True)
@@ -50,4 +51,3 @@ class CorpusStats:
 
 def to_path_str(path: str | Path) -> str:
     return str(Path(path).expanduser().resolve())
-

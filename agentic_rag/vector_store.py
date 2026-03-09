@@ -1,32 +1,38 @@
 from __future__ import annotations
 
-from dataclasses import dataclass, asdict
+from dataclasses import dataclass
 from pathlib import Path
 from typing import Any
 import json
+import os
+import re
 import uuid
 
 import numpy as np
-from qdrant_client import QdrantClient, models
+import psycopg
+from psycopg import sql
 
 from .models import ChunkRecord, RetrievedChunk
 
 
 @dataclass
 class PersistentVectorStore:
-    """Qdrant-backed vector store using Qdrant's persistent local mode."""
+    """PostgreSQL + pgvector store for vectors, chunks, and metadata."""
 
     persist_dir: str | Path
     collection_name: str = "knowledge_base"
+    dsn: str | None = None
+    embedding_dim: int = 384
 
     def __post_init__(self) -> None:
         self.persist_dir = Path(self.persist_dir).expanduser().resolve()
-        self.persist_dir.mkdir(parents=True, exist_ok=True)
-        self.client = QdrantClient(path=str(self.persist_dir))
+        self.dsn = self.dsn or os.getenv("DATABASE_URL", "postgresql://127.0.0.1:5432/rag_assistant")
+        self.table_name = self._safe_identifier(self.collection_name)
+        self.client = psycopg.connect(self.dsn, autocommit=True)
+        self._ensure_schema()
 
     def reset(self) -> None:
-        if self.client.collection_exists(self.collection_name):
-            self.client.delete_collection(self.collection_name)
+        self.client.execute(sql.SQL("DELETE FROM {}" ).format(sql.Identifier(self.table_name)))
 
     def add(self, chunks: list[ChunkRecord], embeddings: np.ndarray) -> None:
         vectors = np.asarray(embeddings, dtype=np.float32)
@@ -34,20 +40,34 @@ class PersistentVectorStore:
             return
         if len(chunks) != len(vectors):
             raise ValueError("Every chunk must have exactly one embedding.")
+        if vectors.shape[1] != self.embedding_dim:
+            raise ValueError(f"Expected {self.embedding_dim}-dimensional embeddings, got {vectors.shape[1]}.")
 
-        self.client.create_collection(
-            collection_name=self.collection_name,
-            vectors_config=models.VectorParams(size=vectors.shape[1], distance=models.Distance.COSINE),
-        )
-        points = [
-            models.PointStruct(
-                id=str(uuid.uuid5(uuid.NAMESPACE_URL, chunk.chunk_id)),
-                vector=vector.tolist(),
-                payload=self._chunk_to_payload(chunk),
+        rows = [
+            (
+                str(uuid.uuid5(uuid.NAMESPACE_URL, chunk.chunk_id)),
+                chunk.chunk_id,
+                chunk.doc_id,
+                chunk.source,
+                chunk.title,
+                chunk.text,
+                chunk.position,
+                json.dumps(chunk.metadata),
+                self._vector_literal(vector),
             )
             for chunk, vector in zip(chunks, vectors, strict=True)
         ]
-        self.client.upsert(collection_name=self.collection_name, points=points, wait=True)
+        statement = sql.SQL(
+            "INSERT INTO {} "
+            "(id, chunk_id, doc_id, source, title, content, position, metadata, embedding) "
+            "VALUES (%s, %s, %s, %s, %s, %s, %s, %s::jsonb, %s::vector) "
+            "ON CONFLICT (chunk_id) DO UPDATE SET "
+            "doc_id = EXCLUDED.doc_id, source = EXCLUDED.source, title = EXCLUDED.title, "
+            "content = EXCLUDED.content, position = EXCLUDED.position, metadata = EXCLUDED.metadata, "
+            "embedding = EXCLUDED.embedding"
+        ).format(sql.Identifier(self.table_name))
+        with self.client.cursor() as cursor:
+            cursor.executemany(statement, rows)
 
     def query(
         self,
@@ -55,66 +75,99 @@ class PersistentVectorStore:
         top_k: int = 5,
         filters: dict[str, Any] | None = None,
     ) -> list[RetrievedChunk]:
-        if not self.client.collection_exists(self.collection_name):
-            return []
+        vector = self._vector_literal(query_embedding)
+        where_clauses: list[sql.Composed] = []
+        filter_params: list[Any] = []
+        column_filters = {"chunk_id", "doc_id", "source", "title", "position"}
 
-        response = self.client.query_points(
-            collection_name=self.collection_name,
-            query=np.asarray(query_embedding, dtype=np.float32).tolist(),
-            query_filter=self._build_filter(filters),
-            limit=top_k,
-            with_payload=True,
-        )
+        for key, value in (filters or {}).items():
+            if not re.fullmatch(r"[A-Za-z_][A-Za-z0-9_]*", key):
+                raise ValueError(f"Invalid metadata filter: {key}")
+            if key in column_filters:
+                where_clauses.append(sql.SQL("{} = %s").format(sql.Identifier(key)))
+                filter_params.append(value)
+            else:
+                where_clauses.append(sql.SQL("metadata ->> %s = %s"))
+                filter_params.extend([key, str(value)])
+
+        where = sql.SQL(" WHERE ") + sql.SQL(" AND ").join(where_clauses) if where_clauses else sql.SQL("")
+        statement = sql.SQL(
+            "SELECT chunk_id, doc_id, source, title, content, position, metadata, "
+            "1 - (embedding <=> %s::vector) AS score "
+            "FROM {}{} ORDER BY embedding <=> %s::vector LIMIT %s"
+        ).format(sql.Identifier(self.table_name), where)
+        params = [vector, *filter_params, vector, top_k]
+
+        with self.client.cursor() as cursor:
+            cursor.execute(statement, params)
+            rows = cursor.fetchall()
+
         return [
             RetrievedChunk(
-                chunk=self._chunk_from_payload(point.payload or {}),
-                score=float(point.score),
+                chunk=ChunkRecord(
+                    chunk_id=row[0],
+                    doc_id=row[1],
+                    source=row[2],
+                    title=row[3],
+                    text=row[4],
+                    position=row[5],
+                    metadata=row[6] or {},
+                ),
+                score=float(row[7]),
             )
-            for point in response.points
+            for row in rows
         ]
 
     def count(self) -> int:
-        if not self.client.collection_exists(self.collection_name):
-            return 0
-        return int(self.client.count(collection_name=self.collection_name, exact=True).count)
+        statement = sql.SQL("SELECT count(*) FROM {}" ).format(sql.Identifier(self.table_name))
+        return int(self.client.execute(statement).fetchone()[0])
 
     def export_manifest(self, path: str | Path) -> None:
         payload = {
-            "collection": self.collection_name,
+            "table": self.table_name,
             "count": self.count(),
-            "storage": str(self.persist_dir),
+            "database": self.dsn.rsplit("/", 1)[-1],
         }
         Path(path).write_text(json.dumps(payload, indent=2), encoding="utf-8")
 
-    @staticmethod
-    def _chunk_to_payload(chunk: ChunkRecord) -> dict[str, Any]:
-        payload = asdict(chunk)
-        # Keep commonly filtered fields at the top level for efficient Qdrant payload indexes.
-        payload.update(chunk.metadata)
-        return payload
+    def close(self) -> None:
+        self.client.close()
 
-    @staticmethod
-    def _chunk_from_payload(payload: dict[str, Any]) -> ChunkRecord:
-        metadata_keys = {"chunk_id", "doc_id", "source", "title", "text", "position"}
-        metadata = dict(payload.get("metadata") or {})
-        metadata.update({key: value for key, value in payload.items() if key not in metadata_keys and key != "metadata"})
-        return ChunkRecord(
-            chunk_id=str(payload["chunk_id"]),
-            doc_id=str(payload["doc_id"]),
-            source=str(payload["source"]),
-            title=str(payload["title"]),
-            text=str(payload["text"]),
-            position=int(payload["position"]),
-            metadata=metadata,
+    def _ensure_schema(self) -> None:
+        self.client.execute("CREATE EXTENSION IF NOT EXISTS vector")
+        table = sql.Identifier(self.table_name)
+        self.client.execute(
+            sql.SQL(
+                "CREATE TABLE IF NOT EXISTS {} ("
+                "id uuid PRIMARY KEY, "
+                "chunk_id text NOT NULL UNIQUE, "
+                "doc_id text NOT NULL, "
+                "source text NOT NULL, "
+                "title text NOT NULL, "
+                "content text NOT NULL, "
+                "position integer NOT NULL, "
+                "metadata jsonb NOT NULL DEFAULT '{{}}'::jsonb, "
+                "embedding vector({}) NOT NULL"
+                ")"
+            ).format(table, sql.SQL(str(self.embedding_dim)))
+        )
+        self.client.execute(
+            sql.SQL("CREATE INDEX IF NOT EXISTS {} ON {} USING hnsw (embedding vector_cosine_ops)").format(
+                sql.Identifier(f"{self.table_name}_embedding_hnsw"), table
+            )
+        )
+        self.client.execute(
+            sql.SQL("CREATE INDEX IF NOT EXISTS {} ON {} USING gin (metadata)").format(
+                sql.Identifier(f"{self.table_name}_metadata_gin"), table
+            )
         )
 
     @staticmethod
-    def _build_filter(filters: dict[str, Any] | None) -> models.Filter | None:
-        if not filters:
-            return None
-        return models.Filter(
-            must=[
-                models.FieldCondition(key=key, match=models.MatchValue(value=value))
-                for key, value in filters.items()
-            ]
-        )
+    def _safe_identifier(value: str) -> str:
+        if not re.fullmatch(r"[A-Za-z_][A-Za-z0-9_]*", value):
+            raise ValueError(f"Invalid PostgreSQL table name: {value}")
+        return value
+
+    @staticmethod
+    def _vector_literal(vector: np.ndarray) -> str:
+        return "[" + ",".join(str(float(value)) for value in vector) + "]"

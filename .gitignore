@@ -4,5 +4,5 @@ __pycache__/
 .pytest_cache/
 *.pyc
 data/index/
-data/qdrant/
+data/pgvector/
 *.egg-info/
