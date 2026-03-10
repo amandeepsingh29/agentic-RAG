@@ -3,6 +3,7 @@ from pathlib import Path
 import pytest
 
 from agentic_rag.ingestion import download_kubernetes_docs
+from agentic_rag.agentic_pipeline import AgenticRAGPipeline
 from agentic_rag.pipeline import RAGPipeline
 
 
@@ -43,3 +44,29 @@ def test_handles_ambiguous_query(kubernetes_pipeline: RAGPipeline):
     result = kubernetes_pipeline.ask("How does it work?")
     assert isinstance(result.abstained, bool)
     assert result.answer
+
+
+def test_agentic_pipeline_records_bounded_trace(tmp_path: Path):
+    docs_dir = tmp_path / "docs"
+    index_dir = tmp_path / "qdrant"
+    download_kubernetes_docs(docs_dir)
+    pipeline = AgenticRAGPipeline(persist_dir=index_dir, llm=FakeLLM(), max_iterations=3)
+    pipeline.ingest(docs_dir)
+
+    result = pipeline.ask("What is the refund policy for airline tickets?")
+
+    assert result.abstained is True
+    assert result.trace
+    assert result.trace[-1]["action"] == "refuse"
+    assert len(result.trace) <= 7
+
+
+def test_metadata_filter_retrieves_matching_documents(kubernetes_pipeline: RAGPipeline):
+    result = kubernetes_pipeline.ask(
+        "How do ConfigMaps help with configuration?",
+        filters={"filename": "configmap.md"},
+    )
+
+    assert result.abstained is False
+    assert result.sources
+    assert {source["source"] for source in result.sources} == {"configmap.md"}

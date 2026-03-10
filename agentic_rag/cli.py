@@ -4,6 +4,7 @@ import argparse
 import json
 from pathlib import Path
 
+from .agentic_pipeline import AgenticRAGPipeline
 from .ingestion import download_kubernetes_docs, load_documents
 from .pipeline import RAGPipeline
 
@@ -17,16 +18,18 @@ def build_parser() -> argparse.ArgumentParser:
 
     ingest = subparsers.add_parser("ingest")
     ingest.add_argument("--documents", default="data/kubernetes")
-    ingest.add_argument("--index", default="data/qdrant")
+    ingest.add_argument("--index", default="data/pgvector")
 
     ask = subparsers.add_parser("ask")
     ask.add_argument("question")
-    ask.add_argument("--index", default="data/qdrant")
+    ask.add_argument("--index", default="data/pgvector")
+    ask.add_argument("--mode", choices=("agentic", "classic"), default="agentic")
 
     eval_parser = subparsers.add_parser("eval")
     eval_parser.add_argument("--documents", default="data/kubernetes")
     eval_parser.add_argument("--questions", default="data/eval_queries.jsonl")
-    eval_parser.add_argument("--index", default="data/qdrant")
+    eval_parser.add_argument("--index", default="data/pgvector")
+    eval_parser.add_argument("--mode", choices=("agentic", "classic"), default="agentic")
 
     return parser
 
@@ -39,7 +42,8 @@ def main() -> None:
         print(json.dumps({"downloaded": [str(path) for path in written]}, indent=2))
         return
 
-    pipeline = RAGPipeline(persist_dir=args.index)
+    pipeline_class = AgenticRAGPipeline if getattr(args, "mode", "classic") == "agentic" else RAGPipeline
+    pipeline = pipeline_class(persist_dir=args.index)
 
     if args.command == "ingest":
         stats = pipeline.ingest(args.documents)

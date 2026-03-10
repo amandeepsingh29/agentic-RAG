@@ -131,8 +131,10 @@
     function sourceDetails(data) {
       const sources = data.sources || [];
       const label = data.abstained ? (data.refusal_reason || "No supporting evidence was found.") : `${sources.length} source passage${sources.length === 1 ? "" : "s"}`;
+      const trace = data.trace || [];
+      const traceLabel = trace.length ? `<div>Agent steps: ${escapeHtml(trace.map((step) => step.action).join(" → "))}</div>` : "";
       const items = sources.map((source) => `<div class="source"><strong>${escapeHtml(source.title || "Source")}</strong><br>${escapeHtml(source.source)} · score ${source.score}</div>`).join("");
-      return `<div>${escapeHtml(label)}</div>${items}`;
+      return `<div>${escapeHtml(label)}</div>${traceLabel}${items}`;
     }
 
     function escapeHtml(value) {
