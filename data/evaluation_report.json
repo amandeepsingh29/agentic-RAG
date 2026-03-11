@@ -1,0 +1,559 @@
+{
+  "title": "Classic RAG vs Agentic RAG: LLM-Only Evaluation",
+  "method": "Both pipelines used the live OpenRouter tencent/hy3:free model for generation, the same PostgreSQL/pgvector index, and the same questions. No fake or local generation model was used.",
+  "corpus": {
+    "documents": 12,
+    "chunks": 675,
+    "sources": [
+      "/Users/amandeep/Desktop/RAG projects/agentic-RAG/data/kubernetes/configmap.md",
+      "/Users/amandeep/Desktop/RAG projects/agentic-RAG/data/kubernetes/daemonset.md",
+      "/Users/amandeep/Desktop/RAG projects/agentic-RAG/data/kubernetes/deployment.md",
+      "/Users/amandeep/Desktop/RAG projects/agentic-RAG/data/kubernetes/ingress.md",
+      "/Users/amandeep/Desktop/RAG projects/agentic-RAG/data/kubernetes/job.md",
+      "/Users/amandeep/Desktop/RAG projects/agentic-RAG/data/kubernetes/namespace.md",
+      "/Users/amandeep/Desktop/RAG projects/agentic-RAG/data/kubernetes/persistent-volumes.md",
+      "/Users/amandeep/Desktop/RAG projects/agentic-RAG/data/kubernetes/pod-lifecycle.md",
+      "/Users/amandeep/Desktop/RAG projects/agentic-RAG/data/kubernetes/probes.md",
+      "/Users/amandeep/Desktop/RAG projects/agentic-RAG/data/kubernetes/secret.md",
+      "/Users/amandeep/Desktop/RAG projects/agentic-RAG/data/kubernetes/service.md",
+      "/Users/amandeep/Desktop/RAG projects/agentic-RAG/data/kubernetes/statefulset.md"
+    ]
+  },
+  "questions": [
+    {
+      "question": "How do ConfigMaps help with configuration?",
+      "expected_type": "supported"
+    },
+    {
+      "question": "What is a Secret used for in Kubernetes?",
+      "expected_type": "supported"
+    },
+    {
+      "question": "How are Services used to expose applications?",
+      "expected_type": "supported"
+    },
+    {
+      "question": "What happens when a Pod is restarted?",
+      "expected_type": "supported"
+    },
+    {
+      "question": "What is the refund policy for airline tickets?",
+      "expected_type": "unsupported"
+    },
+    {
+      "question": "How does it work?",
+      "expected_type": "ambiguous"
+    }
+  ],
+  "classic": {
+    "metrics": {
+      "behavior_accuracy": 0.833,
+      "supported_answer_rate": 0.75,
+      "citation_rate_on_answers": 1.0,
+      "average_latency_ms": 8783.2,
+      "total_llm_calls": 3,
+      "refusals": 3
+    },
+    "cases": [
+      {
+        "answer": "ConfigMaps are API objects that let you store configuration for other objects to use. They can configure containers in a Pod via: container command/args, environment variables, read-only volume files, or reading via the Kubernetes API.",
+        "abstained": false,
+        "has_citations": true,
+        "sources": [
+          {
+            "source": "configmap.md",
+            "title": "Configmap",
+            "chunk_id": "/Users/amandeep/Desktop/RAG projects/agentic-RAG/data/kubernetes/configmap.md:10",
+            "score": 0.5964,
+            "position": 10
+          },
+          {
+            "source": "configmap.md",
+            "title": "Configmap",
+            "chunk_id": "/Users/amandeep/Desktop/RAG projects/agentic-RAG/data/kubernetes/configmap.md:3",
+            "score": 0.5623,
+            "position": 3
+          },
+          {
+            "source": "configmap.md",
+            "title": "Configmap",
+            "chunk_id": "/Users/amandeep/Desktop/RAG projects/agentic-RAG/data/kubernetes/configmap.md:5",
+            "score": 0.5128,
+            "position": 5
+          },
+          {
+            "source": "configmap.md",
+            "title": "Configmap",
+            "chunk_id": "/Users/amandeep/Desktop/RAG projects/agentic-RAG/data/kubernetes/configmap.md:22",
+            "score": 0.5024,
+            "position": 22
+          },
+          {
+            "source": "configmap.md",
+            "title": "Configmap",
+            "chunk_id": "/Users/amandeep/Desktop/RAG projects/agentic-RAG/data/kubernetes/configmap.md:2",
+            "score": 0.5021,
+            "position": 2
+          }
+        ],
+        "confidence": 0.5963566303253174,
+        "elapsed_ms": 14061.7,
+        "llm_calls": 1,
+        "trace_steps": 0,
+        "trace": [],
+        "behavior_correct": true
+      },
+      {
+        "answer": "Secrets are used to hold confidential data. They can be used to:\n- Set environment variables for a container.\n- Provide credentials such as SSH keys or passwords to Pods.\n- Allow the kubelet to pull container images from private registries.\nThe Kubernetes control plane also uses them (e.g., bootstrap token Secrets for node registration). They are similar to ConfigMaps but intended for confidential data.",
+        "abstained": false,
+        "has_citations": true,
+        "sources": [
+          {
+            "source": "secret.md",
+            "title": "Secret",
+            "chunk_id": "/Users/amandeep/Desktop/RAG projects/agentic-RAG/data/kubernetes/secret.md:5",
+            "score": 0.7436,
+            "position": 5
+          },
+          {
+            "source": "secret.md",
+            "title": "Secret",
+            "chunk_id": "/Users/amandeep/Desktop/RAG projects/agentic-RAG/data/kubernetes/secret.md:12",
+            "score": 0.7324,
+            "position": 12
+          },
+          {
+            "source": "secret.md",
+            "title": "Secret",
+            "chunk_id": "/Users/amandeep/Desktop/RAG projects/agentic-RAG/data/kubernetes/secret.md:2",
+            "score": 0.7233,
+            "position": 2
+          },
+          {
+            "source": "secret.md",
+            "title": "Secret",
+            "chunk_id": "/Users/amandeep/Desktop/RAG projects/agentic-RAG/data/kubernetes/secret.md:3",
+            "score": 0.7228,
+            "position": 3
+          },
+          {
+            "source": "secret.md",
+            "title": "Secret",
+            "chunk_id": "/Users/amandeep/Desktop/RAG projects/agentic-RAG/data/kubernetes/secret.md:16",
+            "score": 0.7106,
+            "position": 16
+          }
+        ],
+        "confidence": 0.7435837540874641,
+        "elapsed_ms": 12331.3,
+        "llm_calls": 1,
+        "trace_steps": 0,
+        "trace": [],
+        "behavior_correct": true
+      },
+      {
+        "answer": "Services are an abstraction to help expose groups of Pods over a network. Each Service object defines a logical set of endpoints (usually Pods) along with a policy about how to make those pods accessible.",
+        "abstained": false,
+        "has_citations": true,
+        "sources": [
+          {
+            "source": "service.md",
+            "title": "Service",
+            "chunk_id": "/Users/amandeep/Desktop/RAG projects/agentic-RAG/data/kubernetes/service.md:4",
+            "score": 0.5148,
+            "position": 4
+          },
+          {
+            "source": "ingress.md",
+            "title": "Ingress",
+            "chunk_id": "/Users/amandeep/Desktop/RAG projects/agentic-RAG/data/kubernetes/ingress.md:6",
+            "score": 0.4644,
+            "position": 6
+          },
+          {
+            "source": "service.md",
+            "title": "Service",
+            "chunk_id": "/Users/amandeep/Desktop/RAG projects/agentic-RAG/data/kubernetes/service.md:6",
+            "score": 0.423,
+            "position": 6
+          },
+          {
+            "source": "configmap.md",
+            "title": "Configmap",
+            "chunk_id": "/Users/amandeep/Desktop/RAG projects/agentic-RAG/data/kubernetes/configmap.md:1",
+            "score": 0.4204,
+            "position": 1
+          },
+          {
+            "source": "service.md",
+            "title": "Service",
+            "chunk_id": "/Users/amandeep/Desktop/RAG projects/agentic-RAG/data/kubernetes/service.md:74",
+            "score": 0.4052,
+            "position": 74
+          }
+        ],
+        "confidence": 0.5148257613182068,
+        "elapsed_ms": 26244.7,
+        "llm_calls": 1,
+        "trace_steps": 0,
+        "trace": [],
+        "behavior_correct": true
+      },
+      {
+        "answer": "I don't know.",
+        "abstained": true,
+        "has_citations": false,
+        "sources": [],
+        "confidence": 0.7795191407203674,
+        "elapsed_ms": 24.2,
+        "llm_calls": 0,
+        "trace_steps": 0,
+        "trace": [],
+        "behavior_correct": false
+      },
+      {
+        "answer": "I don't know.",
+        "abstained": true,
+        "has_citations": false,
+        "sources": [],
+        "confidence": 0.23964305283766718,
+        "elapsed_ms": 16.4,
+        "llm_calls": 0,
+        "trace_steps": 0,
+        "trace": [],
+        "behavior_correct": true
+      },
+      {
+        "answer": "I don't know.",
+        "abstained": true,
+        "has_citations": false,
+        "sources": [],
+        "confidence": 0.22498452812525505,
+        "elapsed_ms": 21.2,
+        "llm_calls": 0,
+        "trace_steps": 0,
+        "trace": [],
+        "behavior_correct": true
+      }
+    ]
+  },
+  "agentic": {
+    "metrics": {
+      "behavior_accuracy": 0.833,
+      "supported_answer_rate": 0.75,
+      "citation_rate_on_answers": 1.0,
+      "average_latency_ms": 9365.5,
+      "total_llm_calls": 3,
+      "refusals": 3
+    },
+    "cases": [
+      {
+        "answer": "ConfigMaps are API objects that let you store configuration for other objects to use. They can configure a container inside a Pod in four ways: via container command and args, environment variables, a file in a read-only volume, or code using the Kubernetes API to read the ConfigMap.",
+        "abstained": false,
+        "has_citations": true,
+        "sources": [
+          {
+            "source": "configmap.md",
+            "title": "Configmap",
+            "chunk_id": "/Users/amandeep/Desktop/RAG projects/agentic-RAG/data/kubernetes/configmap.md:10",
+            "score": 0.5964,
+            "position": 10
+          },
+          {
+            "source": "configmap.md",
+            "title": "Configmap",
+            "chunk_id": "/Users/amandeep/Desktop/RAG projects/agentic-RAG/data/kubernetes/configmap.md:3",
+            "score": 0.5623,
+            "position": 3
+          },
+          {
+            "source": "configmap.md",
+            "title": "Configmap",
+            "chunk_id": "/Users/amandeep/Desktop/RAG projects/agentic-RAG/data/kubernetes/configmap.md:5",
+            "score": 0.5128,
+            "position": 5
+          },
+          {
+            "source": "configmap.md",
+            "title": "Configmap",
+            "chunk_id": "/Users/amandeep/Desktop/RAG projects/agentic-RAG/data/kubernetes/configmap.md:22",
+            "score": 0.5024,
+            "position": 22
+          },
+          {
+            "source": "configmap.md",
+            "title": "Configmap",
+            "chunk_id": "/Users/amandeep/Desktop/RAG projects/agentic-RAG/data/kubernetes/configmap.md:2",
+            "score": 0.5021,
+            "position": 2
+          }
+        ],
+        "confidence": 0.5963566303253174,
+        "elapsed_ms": 17735.1,
+        "llm_calls": 1,
+        "trace_steps": 2,
+        "trace": [
+          {
+            "step": 1,
+            "action": "retrieve",
+            "query": "How do ConfigMaps help with configuration?",
+            "hits": 5,
+            "top_score": 0.5964
+          },
+          {
+            "step": 1,
+            "action": "evaluate_evidence",
+            "sufficient": true
+          }
+        ],
+        "behavior_correct": true
+      },
+      {
+        "answer": "Secrets are used to hold confidential data. Purposes include:\n- Setting environment variables for a container.\n- Providing credentials (e.g., SSH keys, passwords) to Pods.\n- Allowing the kubelet to pull container images from private registries.\n- Control plane use, e.g., bootstrap token Secrets to automate node registration.",
+        "abstained": false,
+        "has_citations": true,
+        "sources": [
+          {
+            "source": "secret.md",
+            "title": "Secret",
+            "chunk_id": "/Users/amandeep/Desktop/RAG projects/agentic-RAG/data/kubernetes/secret.md:5",
+            "score": 0.7436,
+            "position": 5
+          },
+          {
+            "source": "secret.md",
+            "title": "Secret",
+            "chunk_id": "/Users/amandeep/Desktop/RAG projects/agentic-RAG/data/kubernetes/secret.md:12",
+            "score": 0.7324,
+            "position": 12
+          },
+          {
+            "source": "secret.md",
+            "title": "Secret",
+            "chunk_id": "/Users/amandeep/Desktop/RAG projects/agentic-RAG/data/kubernetes/secret.md:2",
+            "score": 0.7233,
+            "position": 2
+          },
+          {
+            "source": "secret.md",
+            "title": "Secret",
+            "chunk_id": "/Users/amandeep/Desktop/RAG projects/agentic-RAG/data/kubernetes/secret.md:3",
+            "score": 0.7228,
+            "position": 3
+          },
+          {
+            "source": "secret.md",
+            "title": "Secret",
+            "chunk_id": "/Users/amandeep/Desktop/RAG projects/agentic-RAG/data/kubernetes/secret.md:16",
+            "score": 0.7106,
+            "position": 16
+          }
+        ],
+        "confidence": 0.7435837540874641,
+        "elapsed_ms": 12908.3,
+        "llm_calls": 1,
+        "trace_steps": 2,
+        "trace": [
+          {
+            "step": 1,
+            "action": "retrieve",
+            "query": "What is a Secret used for in Kubernetes?",
+            "hits": 5,
+            "top_score": 0.7436
+          },
+          {
+            "step": 1,
+            "action": "evaluate_evidence",
+            "sufficient": true
+          }
+        ],
+        "behavior_correct": true
+      },
+      {
+        "answer": "Services are an abstraction to help expose groups of Pods over a network. Each Service object defines a logical set of endpoints (usually Pods) along with a policy about how to make those pods accessible.",
+        "abstained": false,
+        "has_citations": true,
+        "sources": [
+          {
+            "source": "service.md",
+            "title": "Service",
+            "chunk_id": "/Users/amandeep/Desktop/RAG projects/agentic-RAG/data/kubernetes/service.md:4",
+            "score": 0.5148,
+            "position": 4
+          },
+          {
+            "source": "ingress.md",
+            "title": "Ingress",
+            "chunk_id": "/Users/amandeep/Desktop/RAG projects/agentic-RAG/data/kubernetes/ingress.md:6",
+            "score": 0.4644,
+            "position": 6
+          },
+          {
+            "source": "service.md",
+            "title": "Service",
+            "chunk_id": "/Users/amandeep/Desktop/RAG projects/agentic-RAG/data/kubernetes/service.md:6",
+            "score": 0.423,
+            "position": 6
+          },
+          {
+            "source": "configmap.md",
+            "title": "Configmap",
+            "chunk_id": "/Users/amandeep/Desktop/RAG projects/agentic-RAG/data/kubernetes/configmap.md:1",
+            "score": 0.4204,
+            "position": 1
+          },
+          {
+            "source": "service.md",
+            "title": "Service",
+            "chunk_id": "/Users/amandeep/Desktop/RAG projects/agentic-RAG/data/kubernetes/service.md:74",
+            "score": 0.4052,
+            "position": 74
+          }
+        ],
+        "confidence": 0.5148257613182068,
+        "elapsed_ms": 25388.5,
+        "llm_calls": 1,
+        "trace_steps": 2,
+        "trace": [
+          {
+            "step": 1,
+            "action": "retrieve",
+            "query": "How are Services used to expose applications?",
+            "hits": 5,
+            "top_score": 0.5148
+          },
+          {
+            "step": 1,
+            "action": "evaluate_evidence",
+            "sufficient": true
+          }
+        ],
+        "behavior_correct": true
+      },
+      {
+        "answer": "I don't know.",
+        "abstained": true,
+        "has_citations": false,
+        "sources": [],
+        "confidence": 0.7795191407203674,
+        "elapsed_ms": 11.5,
+        "llm_calls": 0,
+        "trace_steps": 3,
+        "trace": [
+          {
+            "step": 1,
+            "action": "retrieve",
+            "query": "What happens when a Pod is restarted?",
+            "hits": 5,
+            "top_score": 0.7795
+          },
+          {
+            "step": 1,
+            "action": "evaluate_evidence",
+            "sufficient": false
+          },
+          {
+            "step": 3,
+            "action": "refuse",
+            "reason": "Evidence remained insufficient."
+          }
+        ],
+        "behavior_correct": false
+      },
+      {
+        "answer": "I don't know.",
+        "abstained": true,
+        "has_citations": false,
+        "sources": [],
+        "confidence": 0.23964305283766718,
+        "elapsed_ms": 11.2,
+        "llm_calls": 0,
+        "trace_steps": 3,
+        "trace": [
+          {
+            "step": 1,
+            "action": "retrieve",
+            "query": "What is the refund policy for airline tickets?",
+            "hits": 5,
+            "top_score": 0.2396
+          },
+          {
+            "step": 1,
+            "action": "evaluate_evidence",
+            "sufficient": false
+          },
+          {
+            "step": 3,
+            "action": "refuse",
+            "reason": "Evidence remained insufficient."
+          }
+        ],
+        "behavior_correct": true
+      },
+      {
+        "answer": "I don't know.",
+        "abstained": true,
+        "has_citations": false,
+        "sources": [],
+        "confidence": 0.781579732894903,
+        "elapsed_ms": 138.3,
+        "llm_calls": 0,
+        "trace_steps": 8,
+        "trace": [
+          {
+            "step": 1,
+            "action": "retrieve",
+            "query": "How does it work?",
+            "hits": 5,
+            "top_score": 0.225
+          },
+          {
+            "step": 1,
+            "action": "evaluate_evidence",
+            "sufficient": false
+          },
+          {
+            "step": 1,
+            "action": "rewrite_query",
+            "queries": [
+              "How does it work? in Kubernetes Persistent Volumes",
+              "How does it work? in Kubernetes Pod Lifecycle"
+            ]
+          },
+          {
+            "step": 2,
+            "action": "retrieve",
+            "query": "How does it work? in Kubernetes Persistent Volumes",
+            "hits": 5,
+            "top_score": 0.7814
+          },
+          {
+            "step": 2,
+            "action": "evaluate_evidence",
+            "sufficient": false
+          },
+          {
+            "step": 3,
+            "action": "retrieve",
+            "query": "How does it work? in Kubernetes Pod Lifecycle",
+            "hits": 5,
+            "top_score": 0.7816
+          },
+          {
+            "step": 3,
+            "action": "evaluate_evidence",
+            "sufficient": false
+          },
+          {
+            "step": 8,
+            "action": "refuse",
+            "reason": "Evidence remained insufficient."
+          }
+        ],
+        "behavior_correct": true
+      }
+    ]
+  },
+  "finding": "Both systems made the same supported/unsupported decisions on this test set; agentic RAG adds traceable retrieval control rather than a measured accuracy gain here.",
+  "behavior_accuracy_delta_agentic_minus_classic": 0.0
+}

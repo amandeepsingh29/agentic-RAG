@@ -1,7 +1,6 @@
-{"question":"How do ConfigMaps help with configuration?"}
-{"question":"What is a Secret used for in Kubernetes?"}
-{"question":"How are Services used to expose applications?"}
-{"question":"What happens when a Pod is restarted?"}
-{"question":"What is the refund policy for airline tickets?"}
-{"question":"How does it work?"}
-
+{"question":"How do ConfigMaps help with configuration?","expected_type":"supported"}
+{"question":"What is a Secret used for in Kubernetes?","expected_type":"supported"}
+{"question":"How are Services used to expose applications?","expected_type":"supported"}
+{"question":"What happens when a Pod is restarted?","expected_type":"supported"}
+{"question":"What is the refund policy for airline tickets?","expected_type":"unsupported"}
+{"question":"How does it work?","expected_type":"ambiguous"}

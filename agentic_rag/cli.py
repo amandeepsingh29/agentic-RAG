@@ -5,6 +5,7 @@ import json
 from pathlib import Path
 
 from .agentic_pipeline import AgenticRAGPipeline
+from .evaluation import run_llm_comparison
 from .ingestion import download_kubernetes_docs, load_documents
 from .pipeline import RAGPipeline
 
@@ -31,11 +32,25 @@ def build_parser() -> argparse.ArgumentParser:
     eval_parser.add_argument("--index", default="data/pgvector")
     eval_parser.add_argument("--mode", choices=("agentic", "classic"), default="agentic")
 
+    compare = subparsers.add_parser("compare", help="Compare classic and agentic RAG with live LLM generation")
+    compare.add_argument("--documents", default="data/kubernetes")
+    compare.add_argument("--questions", default="data/eval_queries.jsonl")
+    compare.add_argument("--index", default="data/pgvector")
+    compare.add_argument("--output", default="data/evaluation_report.json")
+
     return parser
 
 
 def main() -> None:
     args = build_parser().parse_args()
+
+    if args.command == "compare":
+        report = run_llm_comparison(args.documents, args.questions, args.index)
+        output = Path(args.output)
+        output.parent.mkdir(parents=True, exist_ok=True)
+        output.write_text(json.dumps(report, indent=2) + "\n", encoding="utf-8")
+        print(json.dumps({"output": str(output), "finding": report["finding"], "classic": report["classic"]["metrics"], "agentic": report["agentic"]["metrics"]}, indent=2))
+        return
 
     if args.command == "download-docs":
         written = download_kubernetes_docs(args.output)
@@ -66,3 +81,7 @@ def main() -> None:
                 payload = json.loads(line)
                 result = pipeline.ask(payload["question"])
                 print(json.dumps({"question": payload["question"], "result": result.__dict__}, indent=2))
+
+
+if __name__ == "__main__":
+    main()
