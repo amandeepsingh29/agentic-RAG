@@ -3,72 +3,111 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>RAG Documentation Assistant - Project Knowledge Base</title>
+  <title>RAG Documentation Assistant - Project Wiki</title>
   <style>
-    body { margin:0; color:#202122; background:#fff; font:14px/1.6 sans-serif; }
-    .page { max-width:1120px; margin:0 auto; padding:24px 28px 60px; }
-    header { border-bottom:1px solid #a2a9b1; padding-bottom:12px; margin-bottom:18px; }
-    h1 { font:normal 29px/1.2 Georgia,"Times New Roman",serif; margin:0 0 7px; }
-    h2 { font:normal 21px/1.3 Georgia,"Times New Roman",serif; border-bottom:1px solid #a2a9b1; padding-bottom:4px; margin:28px 0 12px; }
-    h3 { font-size:16px; margin:20px 0 6px; }
-    p { max-width:82ch; margin:8px 0; }
-    a { color:#36c; text-decoration:none; } a:hover { text-decoration:underline; }
-    .intro { display:grid; grid-template-columns:minmax(0, 1fr) 300px; gap:30px; align-items:start; }
-    .notice { background:#f8f9fa; border:1px solid #a2a9b1; padding:12px 16px; margin:16px 0; }
-    .infobox { border:1px solid #a2a9b1; background:#f8f9fa; padding:10px; }
-    .infobox h2 { text-align:center; border:0; background:#eaecf0; font-size:17px; margin:-10px -10px 8px; padding:8px; }
+    :root { --ink:#202122; --muted:#54595d; --line:#a2a9b1; --soft:#f8f9fa; --blue:#36c; --green:#14866d; --amber:#8a5a00; }
+    * { box-sizing:border-box; }
+    body { margin:0; color:var(--ink); background:#fff; font:15px/1.6 sans-serif; }
+    .page { max-width:1120px; margin:0 auto; padding:28px 32px 64px; }
+    header { border-bottom:1px solid var(--line); padding-bottom:14px; }
+    h1 { font:normal 31px/1.2 Georgia,"Times New Roman",serif; margin:0 0 6px; }
+    h2 { font:normal 22px/1.3 Georgia,"Times New Roman",serif; border-bottom:1px solid var(--line); padding-bottom:5px; margin:32px 0 13px; }
+    h3 { font-size:17px; margin:20px 0 6px; }
+    p { max-width:84ch; margin:8px 0; }
+    a { color:var(--blue); text-decoration:none; } a:hover { text-decoration:underline; }
+    code { background:var(--soft); border:1px solid #eaecf0; padding:1px 4px; }
+    .subtitle { color:var(--muted); }
+    .intro { display:grid; grid-template-columns:minmax(0,1fr) 305px; gap:28px; align-items:start; margin-top:18px; }
+    .infobox { border:1px solid var(--line); background:var(--soft); padding:10px; }
+    .infobox h2 { text-align:center; border:0; background:#eaecf0; font-size:18px; margin:-10px -10px 9px; padding:8px; }
     .infobox dt { float:left; clear:left; width:43%; font-weight:700; } .infobox dd { margin-left:46%; }
-    .toc { display:table; border:1px solid #a2a9b1; background:#f8f9fa; padding:10px 18px; margin-top:22px; }
-    .toc strong { display:block; text-align:center; margin-bottom:5px; }
-    ol, ul { margin-top:6px; } code { background:#f8f9fa; border:1px solid #eaecf0; padding:1px 4px; }
-    table { border-collapse:collapse; margin:12px 0 18px; min-width:620px; } th, td { border:1px solid #a2a9b1; padding:7px 10px; text-align:left; vertical-align:top; } th { background:#eaecf0; }
+    .notice, .result { background:var(--soft); border:1px solid var(--line); padding:13px 16px; margin:16px 0; }
+    .result { border-left:5px solid var(--green); background:#f3fbf8; }
+    .result strong { color:#075c49; }
+    .result-title { font-size:18px; font-weight:700; margin-bottom:3px; }
+    .toc { display:table; border:1px solid var(--line); background:var(--soft); padding:10px 20px; margin:24px 0 4px; }
+    .toc strong { display:block; text-align:center; margin-bottom:4px; }
+    ol, ul { margin-top:6px; }
+    .solve-grid { display:grid; grid-template-columns:repeat(3,1fr); gap:12px; }
+    .solve-card { border:1px solid var(--line); padding:12px; background:#fff; }
+    .solve-card h3 { margin-top:0; }
+    .label { display:inline-block; font-size:12px; font-weight:700; border:1px solid #c8ccd1; padding:1px 6px; background:var(--soft); }
     .table-wrap { overflow-x:auto; }
-    footer { border-top:1px solid #a2a9b1; margin-top:30px; padding-top:12px; color:#54595d; font-size:12px; }
-    @media (max-width:700px) { .page { padding:18px 16px 45px; } .intro { grid-template-columns:1fr; gap:16px; } table { min-width:560px; } }
+    table { border-collapse:collapse; margin:12px 0 18px; width:100%; min-width:650px; }
+    th, td { border:1px solid var(--line); padding:8px 10px; text-align:left; vertical-align:top; }
+    th { background:#eaecf0; }
+    .metric { font-weight:700; }
+    .note { color:var(--muted); font-size:13px; }
+    footer { border-top:1px solid var(--line); margin-top:32px; padding-top:12px; color:var(--muted); font-size:12px; }
+    @media (max-width:760px) { .page { padding:20px 16px 48px; } .intro, .solve-grid { grid-template-columns:1fr; gap:14px; } h1 { font-size:27px; } }
   </style>
 </head>
 <body>
   <main class="page">
-    <header><h1>RAG Documentation Assistant</h1><div>Project knowledge base and implementation reference</div></header>
+    <header>
+      <h1>RAG Documentation Assistant</h1>
+      <div class="subtitle">Project wiki · knowledge base, architecture, evaluation, and scope</div>
+    </header>
 
     <div class="intro">
       <div>
-        <p><b>RAG Documentation Assistant</b> is an agentic retrieval-augmented generation system for answering questions from a local corpus of official Kubernetes documentation.</p>
-        <div class="notice"><b>Architecture.</b> Documents → chunking → embeddings → PostgreSQL with pgvector → agent-controlled retrieval and evidence evaluation → OpenRouter generation. The agent is bounded to three retrieval iterations and cannot answer without sufficient evidence.</div>
-        <p>The browser chat is the user surface. Index refresh and ingestion remain backend and CLI operations so end users cannot choose arbitrary filesystem paths or rebuild the corpus accidentally.</p>
+        <p><b>RAG Documentation Assistant</b> answers questions from a local collection of official Kubernetes documentation. It is a bounded <b>Agentic RAG</b> system: it retrieves evidence, evaluates it, rewrites weak queries when useful, and refuses when the evidence is not sufficient.</p>
+        <div class="result" id="evaluation-result">
+          <div class="result-title">Result: agentic control improved visibility, not accuracy</div>
+          <div>In a six-question live LLM comparison, classic and agentic RAG both achieved <b>83.3% behavior accuracy</b>. Both answered 3 of 4 supported questions, cited every answer they gave, and refused the unsupported and ambiguous questions. Agentic RAG was about <b>6.6% slower</b> on average because it performs bounded retrieval checks.</div>
+        </div>
+        <p><b>What this solves:</b> it reduces unsupported answers, makes retrieved evidence visible to users, and gives developers a trace of how the system reached an answer or refusal.</p>
       </div>
       <aside class="infobox">
-        <h2>System facts</h2>
+        <h2>At a glance</h2>
         <dl>
-          <dt>System</dt><dd>Bounded agentic RAG</dd>
+          <dt>Type</dt><dd>Bounded Agentic RAG</dd>
           <dt>Corpus</dt><dd>12 Kubernetes pages</dd>
+          <dt>Chunks</dt><dd>675 indexed passages</dd>
           <dt>Embeddings</dt><dd>all-MiniLM-L6-v2</dd>
           <dt>Vector store</dt><dd>PostgreSQL + pgvector</dd>
-          <dt>Collection</dt><dd>knowledge_base</dd>
-          <dt>Generation</dt><dd>tencent/hy3:free</dd>
-          <dt>Storage</dt><dd>PostgreSQL database</dd>
+          <dt>Generation</dt><dd>OpenRouter<br><code>tencent/hy3:free</code></dd>
+          <dt>Interface</dt><dd>Browser chat on port 8080</dd>
         </dl>
       </aside>
     </div>
 
-    <nav class="toc"><strong>Contents</strong><ol><li><a href="#knowledge-base">Knowledge base</a></li><li><a href="#pipeline">Pipeline</a></li><li><a href="#pgvector">pgvector design</a></li><li><a href="#grounding">Grounding policy</a></li><li><a href="#agent">Agent behavior</a></li><li><a href="#evaluation">Evaluation</a></li><li><a href="#limitations">Limitations</a></li><li><a href="#usage">Usage</a></li></ol></nav>
+    <nav class="toc"><strong>Contents</strong><ol><li><a href="#solves">What it solves</a></li><li><a href="#evaluation">Evaluation result</a></li><li><a href="#architecture">Architecture</a></li><li><a href="#knowledge-base">Knowledge base</a></li><li><a href="#grounding">Grounding and refusal</a></li><li><a href="#agent">Agent behavior</a></li><li><a href="#limitations">Limitations</a></li><li><a href="#usage">Usage</a></li></ol></nav>
 
-    <section id="knowledge-base"><h2>Knowledge base</h2><p>The current corpus contains 12 pages downloaded from the Kubernetes website repository and stored under <code>data/kubernetes</code>. The files are cleaned from Markdown presentation syntax before chunking.</p><div class="table-wrap"><table><thead><tr><th>Document</th><th>Topic</th><th>Used to test</th></tr></thead><tbody><tr><td><code>configmap.md</code>, <code>secret.md</code></td><td>Configuration and credentials</td><td>Configuration and security questions</td></tr><tr><td><code>service.md</code>, <code>ingress.md</code></td><td>Networking and discovery</td><td>Service exposure and routing</td></tr><tr><td><code>pod-lifecycle.md</code>, <code>probes.md</code></td><td>Pod health and lifecycle</td><td>Restart and health checks</td></tr><tr><td><code>deployment.md</code>, <code>statefulset.md</code>, <code>daemonset.md</code>, <code>job.md</code></td><td>Workload controllers</td><td>Rollouts, identity, scheduling, and batch work</td></tr><tr><td><code>namespace.md</code>, <code>persistent-volumes.md</code></td><td>Isolation and storage</td><td>Namespace and volume questions</td></tr></tbody></table></div></section>
+    <section id="solves">
+      <h2>What it solves</h2>
+      <div class="solve-grid">
+        <article class="solve-card"><h3>Unsupported questions</h3><p>Prevents the model from filling gaps with general knowledge by refusing when the corpus does not support an answer.</p></article>
+        <article class="solve-card"><h3>Weak retrieval</h3><p>Uses a bounded query rewrite when a question is ambiguous or the first evidence set is weak.</p></article>
+        <article class="solve-card"><h3>Trust and debugging</h3><p>Shows source chunks and a step trace so a user or engineer can inspect the answer path.</p></article>
+      </div>
+    </section>
 
-    <section id="pipeline"><h2>Pipeline</h2><ol><li><b>Ingestion:</b> load Markdown, text, or PDF files and preserve source metadata.</li><li><b>Chunking:</b> split documents into overlapping passages with document and position identifiers.</li><li><b>Embedding:</b> encode chunks and questions with <code>sentence-transformers/all-MiniLM-L6-v2</code>.</li><li><b>Storage:</b> write vectors, content, and metadata to PostgreSQL with pgvector.</li><li><b>Agent retrieval:</b> retrieve evidence, evaluate the score and term overlap, and rewrite ambiguous or weak queries.</li><li><b>Bounded control:</b> stop after three retrieval iterations, answer when evidence is sufficient, or refuse.</li><li><b>Generation:</b> send only the selected retrieved context to OpenRouter model <code>tencent/hy3:free</code>.</li></ol></section>
+    <section id="evaluation">
+      <h2>Evaluation result</h2>
+      <p class="note">Snapshot: 15 July 2026 · six labeled questions · same 12-document corpus · live OpenRouter generation in both modes · no fake or local generation model.</p>
+      <div class="table-wrap"><table><thead><tr><th>Metric</th><th>Classic RAG</th><th>Agentic RAG</th><th>Finding</th></tr></thead><tbody>
+        <tr><td class="metric">Behavior accuracy</td><td>83.3%</td><td>83.3%</td><td>No measured accuracy gain on this set.</td></tr>
+        <tr><td class="metric">Supported answer rate</td><td>75%</td><td>75%</td><td>Both safely refused one supported Pod-lifecycle question.</td></tr>
+        <tr><td class="metric">Citation rate on answers</td><td>100%</td><td>100%</td><td>Every generated answer included retrieved sources.</td></tr>
+        <tr><td class="metric">Average latency</td><td>8,783 ms</td><td>9,366 ms</td><td>Agentic control added about 6.6% latency.</td></tr>
+        <tr><td class="metric">Refusals</td><td>3 of 6</td><td>3 of 6</td><td>Both refused unsupported and ambiguous questions.</td></tr>
+      </tbody></table></div>
+      <p><b>How to read this:</b> classic RAG is the simpler and faster baseline. Agentic RAG is useful here for traceability and bounded recovery, but this experiment does not justify claiming that the agent is more accurate. A larger labeled evaluation set is needed before making that claim.</p>
+    </section>
 
-    <section id="pgvector"><h2>pgvector design</h2><p>The project uses a local PostgreSQL database named <code>rag_assistant</code> with the pgvector extension. Docker is not required for local development.</p><p>The <code>knowledge_base</code> table stores the embedding, chunk content, source metadata, and document metadata together. An HNSW index uses cosine distance for approximate nearest-neighbor search, while a GIN index supports metadata filtering.</p><p>The API accepts filters such as <code>{"extension": "md"}</code> on <code>POST /ask</code>. Keeping permissions and vectors in PostgreSQL gives the future internal assistant one place for SQL access checks, audit data, and retrieval.</p></section>
+    <section id="architecture"><h2>Architecture</h2><ol><li><b>Documents:</b> official Kubernetes Markdown pages are stored locally.</li><li><b>Chunking:</b> documents are cleaned and split into overlapping passages.</li><li><b>Embeddings:</b> the same <code>all-MiniLM-L6-v2</code> model embeds passages and questions.</li><li><b>Vector store:</b> PostgreSQL stores vectors, content, and metadata; pgvector performs cosine retrieval.</li><li><b>Agent control:</b> the agent retrieves, evaluates evidence, and may rewrite the query up to three iterations.</li><li><b>Generation:</b> only selected context is sent to OpenRouter <code>tencent/hy3:free</code>.</li></ol></section>
 
-    <section id="grounding"><h2>Grounding policy</h2><p>The pipeline refuses before generation when there are no hits, the top similarity score is below the configured threshold, or the question has insufficient term overlap with the retrieved context. The generation prompt tells the model to answer only from the supplied passages.</p><p>Successful responses include source filenames, document titles, chunk identifiers, positions, and retrieval scores. Absolute server filesystem paths are not exposed to users. A refusal returns <i>I don't know.</i> and no citations.</p></section>
+    <section id="knowledge-base"><h2>Knowledge base</h2><p>The corpus contains 12 pages and 675 chunks from the Kubernetes documentation website repository under <code>data/kubernetes</code>.</p><div class="table-wrap"><table><thead><tr><th>Area</th><th>Documents</th><th>Questions covered</th></tr></thead><tbody><tr><td>Configuration</td><td><code>configmap.md</code>, <code>secret.md</code></td><td>Configuration and credentials</td></tr><tr><td>Networking</td><td><code>service.md</code>, <code>ingress.md</code></td><td>Exposure, discovery, and routing</td></tr><tr><td>Workloads</td><td><code>deployment.md</code>, <code>statefulset.md</code>, <code>daemonset.md</code>, <code>job.md</code></td><td>Rollouts, identity, scheduling, and batch work</td></tr><tr><td>Lifecycle and storage</td><td><code>pod-lifecycle.md</code>, <code>probes.md</code>, <code>persistent-volumes.md</code></td><td>Health, restarts, and storage</td></tr><tr><td>Organization</td><td><code>namespace.md</code></td><td>Isolation and resource grouping</td></tr></tbody></table></div></section>
 
-    <section id="agent"><h2>Agent behavior</h2><p>The agentic controller is implemented in <code>agentic_rag/agentic_pipeline.py</code>. Each run records its actions as a trace containing retrieval, evidence evaluation, query rewriting, and refusal steps.</p><p>Query rewriting is deliberately bounded and evidence-driven. The controller uses retrieved document titles to clarify pronouns or weak questions, then searches PostgreSQL again. It does not call arbitrary tools, browse the internet, or run unbounded self-reflection.</p></section>
+    <section id="grounding"><h2>Grounding and refusal</h2><p>The pipeline refuses before generation when there are no useful hits, similarity is too low, or retrieved text has insufficient overlap with the question. The generation prompt also instructs the model to answer only from supplied passages.</p><p>Answers include source filenames, titles, chunk IDs, positions, and retrieval scores. The API does not expose absolute server paths.</p></section>
 
-    <section id="evaluation"><h2>Evaluation</h2><div class="table-wrap"><table><thead><tr><th>Case</th><th>Expected behavior</th><th>Example</th></tr></thead><tbody><tr><td>Supported</td><td>Answer from relevant passages with citations.</td><td>How do Deployments manage Pods?</td></tr><tr><td>Unsupported</td><td>Refuse instead of inventing an answer.</td><td>What is the refund policy for airline tickets?</td></tr><tr><td>Ambiguous</td><td>Rewrite or refuse when evidence is insufficient.</td><td>How does it work?</td></tr><tr><td>Filtered</td><td>Search only points matching requested metadata.</td><td>Ask with <code>filters</code> in the API payload.</td></tr><tr><td>Trace</td><td>Expose bounded actions for debugging and evaluation.</td><td>Retrieve → evaluate → rewrite → answer/refuse</td></tr></tbody></table></div></section>
+    <section id="agent"><h2>Agent behavior</h2><p>The controller in <code>agentic_rag/agentic_pipeline.py</code> is intentionally bounded. It records <code>retrieve</code>, <code>evaluate_evidence</code>, <code>rewrite_query</code>, and <code>refuse</code> actions, then stops after at most three retrieval iterations.</p><p>It does not browse the internet, call arbitrary tools, run an unbounded planner, or use self-reflection. This keeps the comparison with classic RAG understandable and auditable.</p></section>
 
-    <section id="limitations"><h2>Limitations</h2><ul><li>Local PostgreSQL requires the pgvector extension to be installed before startup.</li><li>The corpus is a selected 12-page Kubernetes set, not a complete enterprise knowledge base.</li><li>Similarity and term overlap are safety heuristics, not a guarantee of factual correctness.</li><li>The agentic loop increases latency and cost compared with the classic baseline.</li><li>The free hosted generation model may be slow, unavailable, or change behavior.</li><li>Private company documents need access-control metadata and tenant-aware filters before production use.</li></ul></section>
+    <section id="limitations"><h2>Limitations</h2><ul><li>The evaluation has six questions and is a snapshot, not a production quality guarantee.</li><li>The selected corpus is not a complete Kubernetes or enterprise knowledge base.</li><li>Similarity and term overlap are safety heuristics, not factual verification.</li><li>The free hosted model can be slow, unavailable, or change behavior.</li><li>Private company documents require access-control metadata and tenant-aware filters.</li></ul></section>
 
-    <section id="usage"><h2>Usage</h2><p>Open the <a href="/">documentation chat</a> for user testing. Set <code>OPENROUTER_API_KEY</code> and <code>DATABASE_URL</code>, run ingestion with <code>rag-docs ingest --documents data/kubernetes --index data/pgvector</code>, and start the API on port <code>8080</code>.</p></section>
-    <footer>Implementation reference for this repository. The page is static and does not query the vector store at runtime.</footer>
+    <section id="usage"><h2>Usage</h2><p>Open the <a href="/">documentation chat</a> for user testing. Run <code>rag-docs compare --documents data/kubernetes --questions data/eval_queries.jsonl</code> to regenerate the comparison report. The browser chat runs on port <code>8080</code>.</p></section>
+    <footer>Static project wiki for the RAG Documentation Assistant. Evaluation details are recorded in <code>data/evaluation_report.json</code>.</footer>
   </main>
 </body>
 </html>

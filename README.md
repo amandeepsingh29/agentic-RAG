@@ -33,7 +33,10 @@ rag-docs download-docs --output data/kubernetes
 rag-docs ingest --documents data/kubernetes --index data/pgvector
 rag-docs ask "How do Deployments manage Pods?" --mode agentic
 rag-docs ask "How do Deployments manage Pods?" --mode classic
+rag-docs compare --documents data/kubernetes --questions data/eval_queries.jsonl --output data/evaluation_report.json
 ```
+
+The `compare` command runs the same labeled questions through both pipelines using the live OpenRouter model, then writes one JSON report containing behavior accuracy, supported-answer rate, citation rate, latency, refusals, and the consolidated finding shown on `/showcase`.
 
 ## API
 
