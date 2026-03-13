@@ -4,6 +4,7 @@ import pytest
 
 from agentic_rag.ingestion import download_kubernetes_docs
 from agentic_rag.agentic_pipeline import AgenticRAGPipeline
+from agentic_rag.evaluation import load_questions
 from agentic_rag.pipeline import RAGPipeline
 
 
@@ -70,3 +71,11 @@ def test_metadata_filter_retrieves_matching_documents(kubernetes_pipeline: RAGPi
     assert result.abstained is False
     assert result.sources
     assert {source["source"] for source in result.sources} == {"configmap.md"}
+
+
+def test_evaluation_set_covers_three_way_comparison():
+    questions = load_questions(Path("data/eval_queries.jsonl"))
+    categories = {question.category for question in questions}
+
+    assert len(questions) >= 12
+    assert {"in-corpus", "agentic-recovery", "outside-corpus", "unsupported", "ambiguous"} <= categories

@@ -32,7 +32,7 @@ def build_parser() -> argparse.ArgumentParser:
     eval_parser.add_argument("--index", default="data/pgvector")
     eval_parser.add_argument("--mode", choices=("agentic", "classic"), default="agentic")
 
-    compare = subparsers.add_parser("compare", help="Compare classic and agentic RAG with live LLM generation")
+    compare = subparsers.add_parser("compare", help="Compare no-RAG, classic RAG, and agentic RAG with live LLM generation")
     compare.add_argument("--documents", default="data/kubernetes")
     compare.add_argument("--questions", default="data/eval_queries.jsonl")
     compare.add_argument("--index", default="data/pgvector")
@@ -49,7 +49,7 @@ def main() -> None:
         output = Path(args.output)
         output.parent.mkdir(parents=True, exist_ok=True)
         output.write_text(json.dumps(report, indent=2) + "\n", encoding="utf-8")
-        print(json.dumps({"output": str(output), "finding": report["finding"], "classic": report["classic"]["metrics"], "agentic": report["agentic"]["metrics"]}, indent=2))
+        print(json.dumps({"output": str(output), "finding": report["finding"], "metrics": report["metrics"], "wins_by_category": report["wins_by_category"]}, indent=2))
         return
 
     if args.command == "download-docs":

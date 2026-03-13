@@ -25,21 +25,34 @@ class OpenRouterLLM:
             raise RuntimeError("OPENROUTER_API_KEY is required for generation.")
 
     def generate(self, question: str, context: str) -> str:
+        return self._complete(
+            question,
+            (
+                "You are a documentation assistant. Answer only from the provided context. "
+                "If the context does not contain the answer, reply exactly: I don't know. "
+                "Keep the answer concise and grounded."
+            ),
+            self._build_prompt(question, context),
+        )
+
+    def generate_open_domain(self, question: str) -> str:
+        """Generate without retrieved context for the no-RAG baseline."""
+        return self._complete(
+            question,
+            (
+                "You are a general knowledge assistant. Answer the user's question from your "
+                "pretrained knowledge. Do not claim to have consulted documents or sources. "
+                "If you are not confident, say exactly: I don't know. Keep the answer concise."
+            ),
+            f"Question: {question}\n\nAnswer:",
+        )
+
+    def _complete(self, question: str, system_prompt: str, user_prompt: str) -> str:
         payload = {
             "model": self.model_name,
             "messages": [
-                {
-                    "role": "system",
-                    "content": (
-                        "You are a documentation assistant. Answer only from the provided context. "
-                        "If the context does not contain the answer, reply exactly: I don't know. "
-                        "Keep the answer concise and grounded."
-                    ),
-                },
-                {
-                    "role": "user",
-                    "content": self._build_prompt(question, context),
-                },
+                {"role": "system", "content": system_prompt},
+                {"role": "user", "content": user_prompt},
             ],
             "temperature": 0,
             "top_p": 1,
