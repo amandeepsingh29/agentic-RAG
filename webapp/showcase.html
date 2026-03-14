@@ -53,8 +53,8 @@
       <div>
         <p><b>RAG Documentation Assistant</b> answers questions from a local collection of official Kubernetes documentation. It is a bounded <b>Agentic RAG</b> system: it retrieves evidence, evaluates it, rewrites weak queries when useful, and refuses when the evidence is not sufficient.</p>
         <div class="result" id="evaluation-result">
-          <div class="result-title">Result: agentic control improved visibility, not accuracy</div>
-          <div>In a six-question live LLM comparison, classic and agentic RAG both achieved <b>83.3% behavior accuracy</b>. Both answered 3 of 4 supported questions, cited every answer they gave, and refused the unsupported and ambiguous questions. Agentic RAG was about <b>6.6% slower</b> on average because it performs bounded retrieval checks.</div>
+          <div class="result-title">Result: each approach wins a different problem</div>
+          <div>In a 14-question live LLM comparison, <b>Agentic RAG scored highest overall at 78.6%</b> because it recovered a weak storage query that classic RAG refused. Classic RAG tied agentic RAG on ordinary in-corpus questions while running faster. No-RAG LLM scored best on general questions outside this corpus, but it produced no project citations and failed unsupported airline-policy safety.</div>
         </div>
         <p><b>What this solves:</b> it reduces unsupported answers, makes retrieved evidence visible to users, and gives developers a trace of how the system reached an answer or refusal.</p>
       </div>
@@ -85,15 +85,17 @@
 
     <section id="evaluation">
       <h2>Evaluation result</h2>
-      <p class="note">Snapshot: 15 July 2026 · six labeled questions · same 12-document corpus · live OpenRouter generation in both modes · no fake or local generation model.</p>
-      <div class="table-wrap"><table><thead><tr><th>Metric</th><th>Classic RAG</th><th>Agentic RAG</th><th>Finding</th></tr></thead><tbody>
-        <tr><td class="metric">Behavior accuracy</td><td>83.3%</td><td>83.3%</td><td>No measured accuracy gain on this set.</td></tr>
-        <tr><td class="metric">Supported answer rate</td><td>75%</td><td>75%</td><td>Both safely refused one supported Pod-lifecycle question.</td></tr>
-        <tr><td class="metric">Citation rate on answers</td><td>100%</td><td>100%</td><td>Every generated answer included retrieved sources.</td></tr>
-        <tr><td class="metric">Average latency</td><td>8,783 ms</td><td>9,366 ms</td><td>Agentic control added about 6.6% latency.</td></tr>
-        <tr><td class="metric">Refusals</td><td>3 of 6</td><td>3 of 6</td><td>Both refused unsupported and ambiguous questions.</td></tr>
+      <p class="note">Snapshot: 15 July 2026 · 14 labeled questions · same 12-document corpus · live OpenRouter generation in all three modes · no fake or local generation model.</p>
+      <div class="table-wrap"><table><thead><tr><th>Metric</th><th>No-RAG LLM</th><th>Classic RAG</th><th>Agentic RAG</th><th>Finding</th></tr></thead><tbody>
+        <tr><td class="metric">Overall behavior accuracy</td><td>28.6%</td><td>71.4%</td><td><b>78.6%</b></td><td>Agentic RAG leads because of one recovered weak query.</td></tr>
+        <tr><td class="metric">In-corpus grounded questions</td><td>0/7</td><td><b>6/7</b></td><td><b>6/7</b></td><td>Classic and agentic tie when one retrieval is enough.</td></tr>
+        <tr><td class="metric">Agentic recovery question</td><td>0/1</td><td>0/1</td><td><b>1/1</b></td><td>Agentic rewriting recovered the storage evidence.</td></tr>
+        <tr><td class="metric">Outside-corpus general questions</td><td><b>2/2</b></td><td>0/2</td><td>0/2</td><td>No-RAG can answer general knowledge; RAG correctly protects corpus scope.</td></tr>
+        <tr><td class="metric">Unsupported-question safety</td><td>1/3</td><td><b>3/3</b></td><td><b>3/3</b></td><td>RAG refuses unsupported airline and weather questions.</td></tr>
+        <tr><td class="metric">Citation rate on answers</td><td>0%</td><td><b>100%</b></td><td><b>100%</b></td><td>Only RAG answers carry project-document citations.</td></tr>
+        <tr><td class="metric">Average latency</td><td>8,561 ms</td><td><b>11,691 ms</b></td><td>12,181 ms</td><td>Classic is the faster grounded option; agentic adds control overhead.</td></tr>
       </tbody></table></div>
-      <p><b>How to read this:</b> classic RAG is the simpler and faster baseline. Agentic RAG is useful here for traceability and bounded recovery, but this experiment does not justify claiming that the agent is more accurate. A larger labeled evaluation set is needed before making that claim.</p>
+      <p><b>How to read this:</b> no-RAG is useful when broad pretrained knowledge is acceptable, but it cannot guarantee scope or cite the company corpus. Classic RAG is best when retrieval is straightforward and low latency matters. Agentic RAG is best when questions are ambiguous or the first retrieval is weak. The result is a tradeoff, not proof that one architecture is universally better.</p>
     </section>
 
     <section id="architecture"><h2>Architecture</h2><ol><li><b>Documents:</b> official Kubernetes Markdown pages are stored locally.</li><li><b>Chunking:</b> documents are cleaned and split into overlapping passages.</li><li><b>Embeddings:</b> the same <code>all-MiniLM-L6-v2</code> model embeds passages and questions.</li><li><b>Vector store:</b> PostgreSQL stores vectors, content, and metadata; pgvector performs cosine retrieval.</li><li><b>Agent control:</b> the agent retrieves, evaluates evidence, and may rewrite the query up to three iterations.</li><li><b>Generation:</b> only selected context is sent to OpenRouter <code>tencent/hy3:free</code>.</li></ol></section>
@@ -102,9 +104,9 @@
 
     <section id="grounding"><h2>Grounding and refusal</h2><p>The pipeline refuses before generation when there are no useful hits, similarity is too low, or retrieved text has insufficient overlap with the question. The generation prompt also instructs the model to answer only from supplied passages.</p><p>Answers include source filenames, titles, chunk IDs, positions, and retrieval scores. The API does not expose absolute server paths.</p></section>
 
-    <section id="agent"><h2>Agent behavior</h2><p>The controller in <code>agentic_rag/agentic_pipeline.py</code> is intentionally bounded. It records <code>retrieve</code>, <code>evaluate_evidence</code>, <code>rewrite_query</code>, and <code>refuse</code> actions, then stops after at most three retrieval iterations.</p><p>It does not browse the internet, call arbitrary tools, run an unbounded planner, or use self-reflection. This keeps the comparison with classic RAG understandable and auditable.</p></section>
+    <section id="agent"><h2>Agent behavior</h2><p>The controller in <code>agentic_rag/agentic_pipeline.py</code> is intentionally bounded. It records <code>retrieve</code>, <code>evaluate_evidence</code>, <code>rewrite_query</code>, and <code>refuse</code> actions, then stops after at most three retrieval iterations.</p><p>In the benchmark, the question “How does this work for storage?” was refused by classic RAG but recovered by agentic query rewriting. The agent does not browse the internet, call arbitrary tools, run an unbounded planner, or use self-reflection.</p></section>
 
-    <section id="limitations"><h2>Limitations</h2><ul><li>The evaluation has six questions and is a snapshot, not a production quality guarantee.</li><li>The selected corpus is not a complete Kubernetes or enterprise knowledge base.</li><li>Similarity and term overlap are safety heuristics, not factual verification.</li><li>The free hosted model can be slow, unavailable, or change behavior.</li><li>Private company documents require access-control metadata and tenant-aware filters.</li></ul></section>
+    <section id="limitations"><h2>Limitations</h2><ul><li>The evaluation has 14 labeled questions and is a snapshot, not a production quality guarantee.</li><li>Keyword checks and expected refusal labels are transparent proxies, not a human or independent LLM quality judge.</li><li>The selected corpus is not a complete Kubernetes or enterprise knowledge base.</li><li>Similarity and term overlap are safety heuristics, not factual verification.</li><li>The free hosted model can be slow, unavailable, or change behavior.</li><li>Private company documents require access-control metadata and tenant-aware filters.</li></ul></section>
 
     <section id="usage"><h2>Usage</h2><p>Open the <a href="/">documentation chat</a> for user testing. Run <code>rag-docs compare --documents data/kubernetes --questions data/eval_queries.jsonl</code> to regenerate the comparison report. The browser chat runs on port <code>8080</code>.</p></section>
     <footer>Static project wiki for the RAG Documentation Assistant. Evaluation details are recorded in <code>data/evaluation_report.json</code>.</footer>

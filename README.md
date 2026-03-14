@@ -36,7 +36,7 @@ rag-docs ask "How do Deployments manage Pods?" --mode classic
 rag-docs compare --documents data/kubernetes --questions data/eval_queries.jsonl --output data/evaluation_report.json
 ```
 
-The `compare` command runs the same labeled questions through both pipelines using the live OpenRouter model, then writes one JSON report containing behavior accuracy, supported-answer rate, citation rate, latency, refusals, and the consolidated finding shown on `/showcase`.
+The `compare` command runs the same labeled questions through a no-RAG LLM baseline, classic RAG, and bounded agentic RAG using the live OpenRouter model. It writes one JSON report containing category-level accuracy, citation rate, latency, refusals, per-question winners, and the consolidated finding shown on `/showcase`.
 
 ## API
 
