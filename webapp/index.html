@@ -3,78 +3,140 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Docs Assistant</title>
+  <title>RAG Documentation Assistant</title>
   <style>
-    :root { color-scheme: dark; --bg:#111315; --panel:#1b1e21; --panel-2:#25292d; --text:#f2f4f5; --muted:#a9b0b7; --line:#353a40; --accent:#d7f36b; --danger:#ff9d9d; }
+    :root {
+      --paper:#f3f1eb; --canvas:#fbfaf7; --ink:#172321; --muted:#6f7975;
+      --line:#d8ddd6; --panel:#ffffff; --teal:#0c6b62; --teal-dark:#084b46;
+      --mint:#dceee8; --yellow:#f4d56b; --red:#a5463f; --shadow:0 18px 45px rgba(35,49,43,.08);
+    }
     * { box-sizing:border-box; }
-    body { margin:0; background:var(--bg); color:var(--text); font:15px/1.6 -apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif; }
-    .app { min-height:100vh; display:flex; flex-direction:column; }
-    header { height:64px; border-bottom:1px solid var(--line); display:flex; align-items:center; justify-content:space-between; padding:0 28px; }
-    .brand { display:flex; align-items:center; gap:10px; font-weight:650; letter-spacing:.01em; }
-    .mark { width:26px; height:26px; display:grid; place-items:center; border-radius:8px; background:var(--accent); color:#111315; font-weight:800; }
-    nav a { color:var(--muted); text-decoration:none; margin-left:20px; font-size:13px; }
-    nav a:hover { color:var(--text); }
-    main { width:min(820px,100%); margin:0 auto; padding:50px 20px 30px; flex:1; }
-    .welcome { text-align:center; margin:24px 0 42px; }
-    h1 { font-size:clamp(2rem,5vw,3.15rem); letter-spacing:-.045em; margin:0 0 10px; }
-    .welcome p { color:var(--muted); margin:0 auto; max-width:560px; }
-    .suggestions { display:flex; flex-wrap:wrap; justify-content:center; gap:9px; margin-top:24px; }
-    .suggestion { border:1px solid var(--line); background:transparent; color:var(--muted); border-radius:18px; padding:8px 13px; cursor:pointer; }
-    .suggestion:hover { color:var(--text); border-color:#667078; }
-    .chat { display:grid; gap:22px; }
-    .message { display:flex; gap:12px; align-items:flex-start; }
+    html { background:var(--paper); }
+    body { margin:0; color:var(--ink); background:var(--paper); font:15px/1.55 Inter,ui-sans-serif,system-ui,-apple-system,"Segoe UI",sans-serif; }
+    button, textarea { font:inherit; }
+    button { cursor:pointer; }
+    .app { min-height:100vh; display:grid; grid-template-columns:246px minmax(0,1fr); }
+    .rail { display:flex; flex-direction:column; gap:28px; padding:25px 20px; background:var(--teal-dark); color:#e9f4ee; }
+    .brand { display:flex; align-items:center; gap:11px; font-weight:750; letter-spacing:-.02em; }
+    .mark { width:30px; height:30px; display:grid; place-items:center; border-radius:9px; background:var(--yellow); color:var(--teal-dark); font:800 15px Georgia,serif; }
+    .rail-kicker { color:#9dc9bc; font-size:11px; text-transform:uppercase; letter-spacing:.14em; margin:4px 0 8px; }
+    .rail h2 { font:normal 22px/1.1 Georgia,"Times New Roman",serif; margin:0; }
+    .rail-copy { color:#b9d4cb; font-size:13px; margin:9px 0 0; }
+    .rail-section { border-top:1px solid rgba(229,247,239,.18); padding-top:18px; }
+    .rail-label { color:#9dc9bc; font-size:11px; text-transform:uppercase; letter-spacing:.1em; margin-bottom:12px; }
+    .facts { display:grid; grid-template-columns:1fr 1fr; gap:10px; }
+    .fact { padding:10px 9px; border:1px solid rgba(229,247,239,.16); border-radius:10px; background:rgba(255,255,255,.06); }
+    .fact strong { display:block; color:#fff; font-size:18px; letter-spacing:-.04em; }
+    .fact span { color:#a8c8bf; font-size:11px; }
+    .scope-list { display:grid; gap:8px; margin:0; padding:0; list-style:none; color:#c9ded7; font-size:13px; }
+    .scope-list li::before { content:""; display:inline-block; width:6px; height:6px; margin:0 8px 2px 0; border-radius:50%; background:var(--yellow); }
+    .rail-bottom { margin-top:auto; display:grid; gap:11px; }
+    .status { display:flex; align-items:center; gap:8px; color:#c9ded7; font-size:12px; }
+    .status-dot { width:8px; height:8px; border-radius:50%; background:#75d5a4; box-shadow:0 0 0 4px rgba(117,213,164,.14); }
+    .rail-link { color:#e9f4ee; text-decoration:none; font-size:13px; }
+    .rail-link:hover { color:var(--yellow); }
+    .workspace { min-width:0; min-height:100vh; display:flex; flex-direction:column; background:var(--canvas); }
+    .topbar { height:72px; display:flex; align-items:center; justify-content:space-between; padding:0 clamp(20px,4vw,58px); border-bottom:1px solid var(--line); }
+    .crumb { color:var(--muted); font-size:13px; }
+    .crumb b { color:var(--ink); font-weight:650; }
+    .top-actions { display:flex; align-items:center; gap:12px; }
+    .mode { display:inline-flex; align-items:center; gap:7px; padding:6px 10px; border:1px solid #bad4cc; border-radius:999px; background:#eff8f4; color:var(--teal); font-size:12px; font-weight:700; }
+    .mode::before { content:""; width:6px; height:6px; border-radius:50%; background:var(--teal); }
+    .new-chat { border:1px solid var(--line); border-radius:8px; background:transparent; color:var(--muted); padding:7px 10px; font-size:12px; }
+    .new-chat:hover { color:var(--ink); border-color:#9eaaa4; background:#fff; }
+    .conversation { width:min(880px,100%); margin:0 auto; padding:clamp(34px,6vh,76px) 24px 150px; flex:1; }
+    .welcome { max-width:720px; margin:0 auto 44px; animation:rise .55s ease both; }
+    .eyebrow { color:var(--teal); font-size:12px; font-weight:750; letter-spacing:.13em; text-transform:uppercase; margin-bottom:13px; }
+    h1 { max-width:650px; font:normal clamp(40px,6vw,68px)/.98 Georgia,"Times New Roman",serif; letter-spacing:-.055em; margin:0; }
+    .welcome-copy { max-width:570px; color:var(--muted); font-size:16px; margin:19px 0 0; }
+    .suggestions { display:grid; grid-template-columns:repeat(3,1fr); gap:10px; margin-top:28px; }
+    .suggestion { min-height:96px; display:flex; flex-direction:column; justify-content:space-between; text-align:left; border:1px solid var(--line); border-radius:13px; background:#fff; color:var(--ink); padding:13px 14px; transition:transform .2s ease,border-color .2s ease,box-shadow .2s ease; }
+    .suggestion:hover { transform:translateY(-3px); border-color:#89b9ad; box-shadow:var(--shadow); }
+    .suggestion:disabled { opacity:.55; cursor:wait; transform:none; }
+    .suggestion small { color:var(--teal); font-size:11px; font-weight:750; text-transform:uppercase; letter-spacing:.08em; }
+    .suggestion span { font-size:14px; line-height:1.3; }
+    .chat { display:grid; gap:30px; }
+    .message { display:flex; gap:12px; align-items:flex-start; animation:rise .3s ease both; }
     .message.user { justify-content:flex-end; }
-    .avatar { flex:0 0 28px; width:28px; height:28px; display:grid; place-items:center; border-radius:9px; background:var(--panel-2); color:var(--accent); font-size:12px; font-weight:700; }
-    .bubble { max-width:680px; white-space:pre-wrap; }
-    .user .bubble { background:var(--panel-2); border-radius:18px 18px 5px 18px; padding:11px 15px; }
-    .assistant .bubble { padding:3px 0; }
+    .avatar { flex:0 0 30px; width:30px; height:30px; display:grid; place-items:center; border-radius:9px; background:var(--mint); color:var(--teal); font-size:11px; font-weight:800; }
+    .user .avatar { background:var(--ink); color:#fff; order:2; }
+    .bubble { max-width:680px; min-width:0; white-space:pre-wrap; }
+    .user .bubble { max-width:560px; background:var(--ink); color:#fff; border-radius:17px 17px 4px 17px; padding:12px 15px; }
+    .assistant .bubble { padding:1px 0; }
     .answer { font-size:16px; }
-    .thinking { display:inline-flex; align-items:center; gap:8px; color:var(--muted); background:var(--panel); border:1px solid var(--line); border-radius:999px; padding:7px 12px; font-size:13px; }
+    .thinking { display:inline-flex; align-items:center; gap:9px; border:1px solid #bad4cc; border-radius:999px; background:#eff8f4; color:var(--teal); padding:7px 12px; font-size:13px; }
     .dots { display:inline-flex; gap:3px; }
-    .dots i { width:4px; height:4px; border-radius:50%; background:var(--accent); animation:pulse 1s infinite ease-in-out; }
+    .dots i { width:4px; height:4px; border-radius:50%; background:var(--teal); animation:pulse 1s infinite ease-in-out; }
     .dots i:nth-child(2) { animation-delay:.15s; } .dots i:nth-child(3) { animation-delay:.3s; }
     @keyframes pulse { 0%,60%,100% { opacity:.3; transform:translateY(0); } 30% { opacity:1; transform:translateY(-2px); } }
-    .details { margin-top:16px; border-top:1px solid var(--line); padding-top:12px; color:var(--muted); font-size:12px; }
-    .source { padding:7px 0; border-bottom:1px solid var(--line); }
-    .source:last-child { border-bottom:0; }
-    .source strong { color:var(--text); font-weight:550; }
-    .composer { position:sticky; bottom:18px; margin-top:38px; }
-    form { display:flex; align-items:flex-end; gap:10px; padding:9px; background:var(--panel); border:1px solid #4a5158; border-radius:18px; box-shadow:0 10px 30px #0005; }
-    textarea { flex:1; min-height:44px; max-height:160px; resize:none; border:0; outline:0; background:transparent; color:var(--text); padding:9px 10px; font:inherit; }
-    textarea::placeholder { color:#78818a; }
-    button.send { width:42px; height:42px; border:0; border-radius:12px; background:var(--accent); color:#111315; cursor:pointer; font-size:18px; font-weight:800; }
-    button.send:disabled { opacity:.45; cursor:wait; }
-    .suggestion:disabled { opacity:.45; cursor:wait; }
-    .hint { text-align:center; color:#727b84; font-size:11px; margin-top:9px; }
-    .error { color:var(--danger); }
-    @media (max-width:600px) { header { padding:0 16px; } nav a { margin-left:10px; } main { padding-top:30px; } }
+    @keyframes rise { from { opacity:0; transform:translateY(8px); } to { opacity:1; transform:none; } }
+    .details { display:grid; gap:10px; margin-top:16px; border-top:1px solid var(--line); padding-top:13px; color:var(--muted); font-size:12px; }
+    .details-head { color:var(--teal); font-weight:750; font-size:11px; letter-spacing:.08em; text-transform:uppercase; }
+    .source { border:1px solid var(--line); border-radius:10px; background:#fff; padding:10px 12px; }
+    .source strong { display:block; color:var(--ink); font-weight:700; margin-bottom:2px; }
+    .source-meta { color:var(--muted); }
+    .composer-wrap { position:fixed; z-index:5; bottom:0; left:246px; right:0; padding:15px 24px 18px; background:linear-gradient(transparent,var(--canvas) 26%); }
+    .composer { width:min(880px,100%); margin:0 auto; }
+    form { display:flex; align-items:flex-end; gap:9px; padding:8px; border:1px solid #b9c5bf; border-radius:15px; background:#fff; box-shadow:0 14px 35px rgba(35,49,43,.12); }
+    textarea { flex:1; min-height:43px; max-height:150px; resize:none; border:0; outline:0; background:transparent; color:var(--ink); padding:9px 10px; }
+    textarea::placeholder { color:#9aa49e; }
+    button.send { width:43px; height:43px; border:0; border-radius:10px; background:var(--teal); color:#fff; cursor:pointer; font-size:18px; font-weight:800; transition:background .2s ease,transform .2s ease; }
+    button.send:hover { background:#09554f; transform:translateY(-1px); }
+    button.send:disabled { opacity:.5; cursor:wait; transform:none; }
+    .hint { display:flex; justify-content:space-between; gap:10px; color:#8a948e; font-size:11px; margin:8px 3px 0; }
+    .error { color:var(--red); }
+    [hidden] { display:none !important; }
+    @media (max-width:780px) {
+      .app { display:block; }
+      .rail { display:none; }
+      .topbar { height:62px; padding:0 16px; }
+      .mode { padding:5px 8px; }
+      .conversation { padding:34px 16px 150px; }
+      .suggestions { grid-template-columns:1fr; }
+      .suggestion { min-height:auto; gap:5px; }
+      .composer-wrap { left:0; padding:12px 12px 14px; }
+      .hint { display:block; text-align:center; }
+      .hint span { display:none; }
+    }
+    @media (prefers-reduced-motion:reduce) { *,*::before,*::after { animation-duration:.01ms !important; transition-duration:.01ms !important; } }
   </style>
 </head>
 <body>
   <div class="app">
-    <header>
-      <div class="brand"><span class="mark">D</span> Documentation Assistant</div>
-      <nav><a href="/showcase">About this project</a></nav>
-    </header>
-    <main>
-      <section class="welcome" id="welcome">
-        <h1>Ask the documentation.</h1>
-        <p>Get answers from the indexed Kubernetes documentation, with the source passages shown alongside each response.</p>
-        <div class="suggestions">
-          <button class="suggestion" data-question="What is a Secret used for in Kubernetes?">Kubernetes Secrets</button>
-          <button class="suggestion" data-question="How are Services used to expose applications?">Services</button>
-          <button class="suggestion" data-question="What happens when a Pod is restarted?">Pod lifecycle</button>
-        </div>
+    <aside class="rail">
+      <div class="brand"><span class="mark">R</span><span>RAG Assistant</span></div>
+      <section>
+        <div class="rail-kicker">Knowledge workspace</div>
+        <h2>Ask the docs.</h2>
+        <p class="rail-copy">A grounded conversation with the indexed Kubernetes knowledge base.</p>
       </section>
-      <section class="chat" id="chat" aria-live="polite"></section>
-      <section class="composer">
-        <form id="ask-form">
-          <textarea id="question" rows="1" maxlength="1000" placeholder="Ask a question about Kubernetes docs..." required></textarea>
-          <button class="send" id="send" type="submit" aria-label="Send question">↑</button>
-        </form>
-        <div class="hint">Answers are generated only from the indexed documents. The assistant may say “I don't know.”</div>
+      <section class="rail-section">
+        <div class="rail-label">Index at a glance</div>
+        <div class="facts"><div class="fact"><strong>12</strong><span>documents</span></div><div class="fact"><strong>675</strong><span>chunks</span></div></div>
       </section>
-    </main>
+      <section class="rail-section">
+        <div class="rail-label">Scope</div>
+        <ul class="scope-list"><li>Official Kubernetes docs</li><li>PostgreSQL + pgvector</li><li>Source-backed answers</li></ul>
+      </section>
+      <div class="rail-bottom"><div class="status"><span class="status-dot"></span>Assistant is ready</div><a class="rail-link" href="/showcase">Read the project wiki &rarr;</a></div>
+    </aside>
+    <section class="workspace">
+      <header class="topbar"><div class="crumb"><b>Documentation Assistant</b> / conversation</div><div class="top-actions"><span class="mode">Agentic RAG</span><button class="new-chat" id="new-chat" type="button">New chat</button></div></header>
+      <main class="conversation">
+        <section class="welcome" id="welcome">
+          <div class="eyebrow">A focused knowledge base</div>
+          <h1>Find the answer, with evidence.</h1>
+          <p class="welcome-copy">Ask about Kubernetes concepts and workflows. The assistant searches the indexed documentation, shows its sources, and says when the corpus does not know.</p>
+          <div class="suggestions">
+            <button class="suggestion" data-question="What is a Secret used for in Kubernetes?"><small>Configuration</small><span>What is a Secret used for?</span></button>
+            <button class="suggestion" data-question="How do Deployments manage ReplicaSets and Pods?"><small>Workloads</small><span>How do Deployments manage Pods?</span></button>
+            <button class="suggestion" data-question="How does this work for storage?"><small>Try agentic retrieval</small><span>How does this work for storage?</span></button>
+          </div>
+        </section>
+        <section class="chat" id="chat" aria-live="polite"></section>
+      </main>
+      <div class="composer-wrap"><section class="composer"><form id="ask-form"><textarea id="question" rows="1" maxlength="1000" placeholder="Ask a question about Kubernetes docs..." aria-label="Question" required></textarea><button class="send" id="send" type="submit" aria-label="Send question">&uarr;</button></form><div class="hint"><span>Enter to send &middot; Shift + Enter for a new line</span><span>Answers stay inside the indexed corpus</span></div></section></div>
+    </section>
   </div>
   <script>
     const chat = document.getElementById("chat");
@@ -82,100 +144,55 @@
     const input = document.getElementById("question");
     const send = document.getElementById("send");
     const welcome = document.getElementById("welcome");
+    const newChat = document.getElementById("new-chat");
     const suggestionButtons = [...document.querySelectorAll("[data-question]")];
     let requestInFlight = false;
 
     function addMessage(kind, text, details = "") {
-      const row = document.createElement("article");
-      row.className = `message ${kind}`;
-      const avatar = document.createElement("div");
-      avatar.className = "avatar";
-      avatar.textContent = kind === "user" ? "You" : "D";
-      const bubble = document.createElement("div");
-      bubble.className = "bubble";
-      bubble.textContent = text;
-      if (details) {
-        const detail = document.createElement("div");
-        detail.className = "details";
-        detail.innerHTML = details;
-        bubble.appendChild(detail);
-      }
+      const row = document.createElement("article"); row.className = `message ${kind}`;
+      const avatar = document.createElement("div"); avatar.className = "avatar"; avatar.textContent = kind === "user" ? "You" : "R";
+      const bubble = document.createElement("div"); bubble.className = `bubble${kind === "assistant" ? " answer" : ""}`; bubble.textContent = text;
+      if (details) appendDetails(bubble, details);
       row.append(kind === "user" ? bubble : avatar, kind === "user" ? avatar : bubble);
-      chat.appendChild(row);
-      row.scrollIntoView({ behavior: "smooth", block: "nearest" });
-      return row;
+      chat.appendChild(row); row.scrollIntoView({ behavior:"smooth", block:"nearest" }); return row;
     }
 
     function addThinking() {
-      const row = document.createElement("article");
-      row.className = "message assistant";
-      row.innerHTML = '<div class="avatar">D</div><div class="bubble"><span class="thinking" role="status"><span>Thinking</span><span class="dots" aria-hidden="true"><i></i><i></i><i></i></span></span></div>';
-      chat.appendChild(row);
-      row.scrollIntoView({ behavior: "smooth", block: "nearest" });
-      return row;
+      const row = document.createElement("article"); row.className = "message assistant";
+      row.innerHTML = '<div class="avatar">R</div><div class="bubble"><span class="thinking" role="status"><span>Searching the knowledge base</span><span class="dots" aria-hidden="true"><i></i><i></i><i></i></span></span></div>';
+      chat.appendChild(row); row.scrollIntoView({ behavior:"smooth", block:"nearest" }); return row;
     }
 
-    function completeAssistantMessage(row, text, details = "", isError = false) {
-      const bubble = row.querySelector(".bubble");
-      bubble.textContent = text;
-      if (isError) bubble.classList.add("error");
-      if (details) {
-        const detail = document.createElement("div");
-        detail.className = "details";
-        detail.innerHTML = details;
-        bubble.appendChild(detail);
-      }
-      row.scrollIntoView({ behavior: "smooth", block: "nearest" });
-    }
-
+    function appendDetails(bubble, details) { const detail = document.createElement("div"); detail.className = "details"; detail.innerHTML = details; bubble.appendChild(detail); }
+    function completeAssistantMessage(row, text, details = "", isError = false) { const bubble = row.querySelector(".bubble"); bubble.textContent = text; bubble.classList.add("answer"); if (isError) bubble.classList.add("error"); if (details) appendDetails(bubble, details); row.scrollIntoView({ behavior:"smooth", block:"nearest" }); }
+    function escapeHtml(value) { return String(value).replace(/[&<>"']/g, (char) => ({"&":"&amp;","<":"&lt;",">":"&gt;","\"":"&quot;","'":"&#039;"}[char])); }
     function sourceDetails(data) {
-      const sources = data.sources || [];
+      const sources = data.sources || []; const trace = data.trace || [];
       const label = data.abstained ? (data.refusal_reason || "No supporting evidence was found.") : `${sources.length} source passage${sources.length === 1 ? "" : "s"}`;
-      const trace = data.trace || [];
-      const traceLabel = trace.length ? `<div>Agent steps: ${escapeHtml(trace.map((step) => step.action).join(" → "))}</div>` : "";
-      const items = sources.map((source) => `<div class="source"><strong>${escapeHtml(source.title || "Source")}</strong><br>${escapeHtml(source.source)} · score ${source.score}</div>`).join("");
-      return `<div>${escapeHtml(label)}</div>${traceLabel}${items}`;
-    }
-
-    function escapeHtml(value) {
-      return String(value).replace(/[&<>"']/g, (char) => ({"&":"&amp;","<":"&lt;",">":"&gt;","\"":"&quot;","'":"&#039;"}[char]));
+      const traceLabel = trace.length ? `<div><span class="details-head">Agent trace</span><br>${escapeHtml(trace.map((step) => step.action).join("  ->  "))}</div>` : "";
+      const cards = sources.map((source) => `<div class="source"><strong>${escapeHtml(source.title || "Source")}</strong><span class="source-meta">${escapeHtml(source.source)} &middot; relevance ${escapeHtml(source.score)}</span></div>`).join("");
+      return `<div><span class="details-head">Evidence</span><br>${escapeHtml(label)}</div>${traceLabel}${cards}`;
     }
 
     async function ask(question) {
-      const trimmed = question.trim();
-      if (!trimmed || requestInFlight) return;
-      requestInFlight = true;
-      welcome.hidden = true;
-      addMessage("user", trimmed);
-      const thinking = addThinking();
-      input.value = "";
-      send.disabled = true;
-      suggestionButtons.forEach((button) => { button.disabled = true; });
-      const controller = new AbortController();
-      const timeout = window.setTimeout(() => controller.abort(), 120000);
+      const trimmed = question.trim(); if (!trimmed || requestInFlight) return;
+      requestInFlight = true; welcome.hidden = true; addMessage("user", trimmed); const thinking = addThinking(); input.value = ""; input.style.height = "auto"; send.disabled = true; suggestionButtons.forEach((button) => { button.disabled = true; });
+      const controller = new AbortController(); const timeout = window.setTimeout(() => controller.abort(), 120000);
       try {
         const response = await fetch("/ask", { method:"POST", headers:{"Content-Type":"application/json"}, body:JSON.stringify({question:trimmed}), signal:controller.signal });
-        const raw = await response.text();
-        let data;
-        try { data = JSON.parse(raw); } catch { data = { detail: raw }; }
+        const raw = await response.text(); let data; try { data = JSON.parse(raw); } catch { data = { detail:raw }; }
         if (!response.ok) throw new Error(data.detail || "The request could not be completed.");
         completeAssistantMessage(thinking, data.answer || "I don't know.", sourceDetails(data));
-      } catch (error) {
-        const message = error.name === "AbortError" ? "The request took too long. Please try again." : error.message;
-        completeAssistantMessage(thinking, message, "", true);
-      } finally {
-        window.clearTimeout(timeout);
-        requestInFlight = false;
-        send.disabled = false;
-        suggestionButtons.forEach((button) => { button.disabled = false; });
-        input.focus();
-      }
+      } catch (error) { completeAssistantMessage(thinking, error.name === "AbortError" ? "The request took too long. Please try again." : error.message, "", true); }
+      finally { window.clearTimeout(timeout); requestInFlight = false; send.disabled = false; suggestionButtons.forEach((button) => { button.disabled = false; }); input.focus(); }
     }
 
+    function resetChat() { if (requestInFlight) return; chat.replaceChildren(); welcome.hidden = false; input.value = ""; input.style.height = "auto"; input.focus(); }
     form.addEventListener("submit", (event) => { event.preventDefault(); ask(input.value); });
     input.addEventListener("keydown", (event) => { if (event.key === "Enter" && !event.shiftKey) { event.preventDefault(); form.requestSubmit(); } });
-    input.addEventListener("input", () => { input.style.height = "auto"; input.style.height = `${Math.min(input.scrollHeight, 160)}px`; });
+    input.addEventListener("input", () => { input.style.height = "auto"; input.style.height = `${Math.min(input.scrollHeight, 150)}px`; });
     suggestionButtons.forEach((button) => button.addEventListener("click", () => ask(button.dataset.question)));
+    newChat.addEventListener("click", resetChat);
   </script>
 </body>
 </html>
