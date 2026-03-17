@@ -1,7 +1,5 @@
 # RAG Documentation Assistant
 
-Production-shaped documentation assistant built with **classic RAG**, **bounded Agentic RAG**, and a **no-RAG LLM baseline**.
-
 The application answers questions from a local knowledge base of official Kubernetes documentation. It retrieves relevant passages from PostgreSQL with pgvector, sends only selected evidence to an OpenRouter model, cites the source passages, and refuses when the evidence is not strong enough.
 
 The project is designed to demonstrate the engineering decisions behind a production RAG system: ingestion, chunking, embeddings, persistent vector search, metadata filtering, grounded generation, refusal behavior, agent traces, and comparative evaluation.
